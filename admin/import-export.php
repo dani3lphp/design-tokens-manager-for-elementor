@@ -1,41 +1,6 @@
 <?php
 /**
  * Import/Export handlers + Two-way Sync (Pull/Push).
- *
- * @package Design_Tokens_Manager_For_Elementor
- */
-
-/**
- * Normalize arrays structure for export to JSON.
- *
- * @param array $colors_norm Normalized colors array.
- * @param array $fonts_norm  Normalized fonts array.
- * @return array Tuple-like array [colors, fonts].
- */
-function edtm_normalize_for_export( $colors_norm, $fonts_norm ) {
-	return array( $colors_norm, $fonts_norm );
-}
-
-/**
- * Output a JSON download response.
- *
- * @param array  $payload Export payload.
- * @param string $filename Filename for the download.
- * @return void
- */
-function edtm_output_json_download( $payload, $filename ) {
-	header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
-	header( 'Content-Disposition: attachment; filename=' . sanitize_file_name( $filename ) );
-	echo wp_json_encode( $payload );
-	exit;
-}
-
-/**
- * Build export payload (kit|plugin).
- *
- * @param string $source       Source of truth: 'kit' or 'plugin'.
- * @param bool   $preserve_ids Whether to preserve IDs where possible.
- * @return array Payload with colors and fonts arrays.
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -43,13 +8,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Build export payload (kit|plugin).
- */
-/**
- * Build export payload (kit|plugin).
- *
- * @param string $source       Source of truth: 'kit' or 'plugin'.
- * @param bool   $preserve_ids Whether to preserve IDs where possible.
- * @return array Payload with colors and fonts arrays.
  */
 function edtm_build_export_payload( $source = 'kit', $preserve_ids = true ) {
 	$payload = array(
@@ -64,40 +22,30 @@ function edtm_build_export_payload( $source = 'kit', $preserve_ids = true ) {
 	$fonts_norm  = array();
 
 	if ( 'kit' === $source ) {
-		$kit        = function_exists( 'edtm_get_active_kit' ) ? edtm_get_active_kit() : false;
+		$kit = function_exists( 'edtm_get_active_kit' ) ? edtm_get_active_kit() : false;
 		$kit_colors = array();
 		$kit_fonts  = array();
 
 		if ( $kit && method_exists( $kit, 'get_settings' ) ) {
-			try {
-				$kit_colors = $kit->get_settings( 'custom_colors' );
-			} catch ( \Throwable $e ) {
-				// Intentionally ignored: Elementor may not be loaded; we continue with safe defaults.
-				$kit_colors = is_array( $kit_colors ) ? $kit_colors : array();
-			}
-			try {
-				$kit_fonts = $kit->get_settings( 'custom_typography' );
-			} catch ( \Throwable $e ) {
-				// Intentionally ignored: Elementor may not be loaded; we continue with safe defaults.
-				$kit_fonts = is_array( $kit_fonts ) ? $kit_fonts : array();
-			}
-
-				$kit_id     = edtm_get_active_kit_id();
-				$settings   = get_post_meta( $kit_id, '_elementor_page_settings', true );
+			try { $kit_colors = $kit->get_settings( 'custom_colors' ); } catch ( \Throwable $e ) {}
+			try { $kit_fonts  = $kit->get_settings( 'custom_typography' ); } catch ( \Throwable $e ) {}
+		} else {
+			if ( function_exists( 'edtm_get_active_kit_id' ) ) {
+				$kit_id   = edtm_get_active_kit_id();
+				$settings = get_post_meta( $kit_id, '_elementor_page_settings', true );
 				$kit_colors = is_array( $settings ) && isset( $settings['custom_colors'] ) ? $settings['custom_colors'] : array();
 				$kit_fonts  = is_array( $settings ) && isset( $settings['custom_typography'] ) ? $settings['custom_typography'] : array();
+			}
 		}
 		$prefix = function_exists( 'edtm_detect_typo_prefix' ) ? edtm_detect_typo_prefix( $kit_fonts ) : 'typography_typo';
 
 		if ( is_array( $kit_colors ) ) {
 			foreach ( $kit_colors as $item ) {
-				if ( ! is_array( $item ) ) {
-					continue; }
+				if ( ! is_array( $item ) ) { continue; }
 				$id    = isset( $item['_id'] ) ? (string) $item['_id'] : '';
 				$title = isset( $item['title'] ) ? (string) $item['title'] : '';
 				$hex   = isset( $item['color'] ) ? (string) $item['color'] : '';
-				if ( '' === $title || '' === $hex ) {
-					continue; }
+				if ( '' === $title || '' === $hex ) { continue; }
 				$colors_norm[] = array(
 					'id'    => $preserve_ids ? $id : '',
 					'title' => $title,
@@ -107,12 +55,10 @@ function edtm_build_export_payload( $source = 'kit', $preserve_ids = true ) {
 		}
 		if ( is_array( $kit_fonts ) ) {
 			foreach ( $kit_fonts as $item ) {
-				if ( ! is_array( $item ) ) {
-					continue; }
+				if ( ! is_array( $item ) ) { continue; }
 				$id    = isset( $item['_id'] ) ? (string) $item['_id'] : '';
 				$title = isset( $item['title'] ) ? (string) $item['title'] : '';
-				if ( '' === $title ) {
-					continue; }
+				if ( '' === $title ) { continue; }
 
 				$family = isset( $item[ $prefix . '_font_family' ] ) ? (string) $item[ $prefix . '_font_family' ] : ( isset( $item['typography_font_family'] ) ? (string) $item['typography_font_family'] : '' );
 
@@ -133,7 +79,7 @@ function edtm_build_export_payload( $source = 'kit', $preserve_ids = true ) {
 				}
 				if ( '' === $size && isset( $item[ $prefix . '_font_size' ] ) && is_array( $item[ $prefix . '_font_size' ] ) && function_exists( 'edtm_dimension_to_string' ) ) {
 					$size = edtm_dimension_to_string( $item[ $prefix . '_font_size' ] );
-				} elseif ( '' === $size && isset( $item['typography_font_size'] ) && is_array( $item['typography_font_size'] ) && function_exists( 'edtm_dimension_to_string' ) ) {
+				} elseif ( '' === $size && isset( $item['typography_font_size' ] ) && is_array( $item['typography_font_size' ] ) && function_exists( 'edtm_dimension_to_string' ) ) {
 					$size = edtm_dimension_to_string( $item['typography_font_size'] );
 				}
 
@@ -141,7 +87,7 @@ function edtm_build_export_payload( $source = 'kit', $preserve_ids = true ) {
 				$lh     = '';
 				if ( isset( $item[ $prefix . '_line_height' ] ) && is_array( $item[ $prefix . '_line_height' ] ) && function_exists( 'edtm_dimension_to_string' ) ) {
 					$lh = edtm_dimension_to_string( $item[ $prefix . '_line_height' ] );
-				} elseif ( isset( $item['typography_line_height'] ) && is_array( $item['typography_line_height'] ) && function_exists( 'edtm_dimension_to_string' ) ) {
+				} elseif ( isset( $item['typography_line_height' ] ) && is_array( $item['typography_line_height' ] ) && function_exists( 'edtm_dimension_to_string' ) ) {
 					$lh = edtm_dimension_to_string( $item['typography_line_height'] );
 				}
 
@@ -175,10 +121,7 @@ function edtm_build_export_payload( $source = 'kit', $preserve_ids = true ) {
 							}
 						}
 					}
-				} catch ( \Throwable $e ) {
-					// Intentionally ignored: Elementor instance not available.
-					$kcolors = is_array( $kcolors ) ? $kcolors : array();
-				}
+				} catch ( \Throwable $e ) {}
 				try {
 					$kfonts = $kit->get_settings( 'custom_typography' );
 					if ( is_array( $kfonts ) ) {
@@ -188,10 +131,7 @@ function edtm_build_export_payload( $source = 'kit', $preserve_ids = true ) {
 							}
 						}
 					}
-				} catch ( \Throwable $e ) {
-					// Intentionally ignored: Elementor instance not available.
-					$kfonts = is_array( $kfonts ) ? $kfonts : array();
-				}
+				} catch ( \Throwable $e ) {}
 			}
 		}
 
@@ -203,7 +143,7 @@ function edtm_build_export_payload( $source = 'kit', $preserve_ids = true ) {
 			);
 		}
 		foreach ( $opt_fonts as $title => $props ) {
-			$props        = is_array( $props ) ? $props : array();
+			$props = is_array( $props ) ? $props : array();
 			$fonts_norm[] = array(
 				'id'          => $preserve_ids && isset( $ids_by_title_font[ strtolower( (string) $title ) ] ) ? $ids_by_title_font[ strtolower( (string) $title ) ] : '',
 				'title'       => (string) $title,
@@ -227,7 +167,7 @@ function edtm_build_export_payload( $source = 'kit', $preserve_ids = true ) {
 function edtm_detect_section_from_request() {
 	$section = '';
 
-	// Try referer first - but sanitize heavily and only accept our known values.
+	// Try referer first - but sanitize heavily and only accept our known values
 	if ( ! empty( $_SERVER['HTTP_REFERER'] ) ) {
 		$referer = wp_sanitize_redirect( wp_unslash( $_SERVER['HTTP_REFERER'] ) );
 		if ( $referer ) {
@@ -267,7 +207,7 @@ function edtm_detect_section_from_request() {
 			}
 		}
 	}
-	return $section ? $section : 'fonts';
+	return $section ?: 'fonts';
 }
 
 /**
@@ -284,15 +224,15 @@ function edtm_handle_export_tokens() {
 
 	$payload = edtm_build_export_payload( $source, $preserve_ids );
 
-	// Persist user's section preference (detect robustly).
+	// Persist user's section preference (detect robustly)
 	$current_section = edtm_detect_section_from_request();
 	if ( $current_section && get_current_user_id() ) {
 		update_user_meta( get_current_user_id(), 'edtm_last_active_section', $current_section );
 	}
 
-	// FIX: Use gmdate() instead of date() for timezone safety.
+	// FIX: Use gmdate() instead of date() for timezone safety
 	$filename = 'elementor-tokens-' . gmdate( 'Ymd-His' ) . '.json';
-	// Sanitize filename and quote it for Content-Disposition.
+	// Sanitize filename and quote it for Content-Disposition
 	$safe_filename = function_exists( 'sanitize_file_name' ) ? sanitize_file_name( $filename ) : $filename;
 	nocache_headers();
 	header( 'Content-Type: application/json; charset=utf-8' );
@@ -313,49 +253,34 @@ function edtm_handle_import_tokens() {
 	$mode         = isset( $_POST['edtm_import_mode'] ) ? sanitize_text_field( wp_unslash( $_POST['edtm_import_mode'] ) ) : 'merge';
 	$preserve_ids = ! empty( $_POST['edtm_import_preserve_ids'] );
 
-	// FIX: Properly validate and sanitize $_FILES access.
+	// FIX: Properly validate and sanitize $_FILES access
 	if ( ! isset( $_FILES['edtm_import_file'] ) ) {
 		wp_safe_redirect( edtm_get_admin_page_url( array( 'edtm-import' => '0' ) ) );
 		exit;
 	}
 
 // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- File validation handled via wp_check_filetype() and tmp_name is server-generated
-	$uploaded_file = $_FILES['edtm_import_file'];
+$uploaded_file = $_FILES['edtm_import_file'];
 
 	if ( empty( $uploaded_file['tmp_name'] ) ) {
 		wp_safe_redirect( edtm_get_admin_page_url( array( 'edtm-import' => '0' ) ) );
 		exit;
 	}
 
-	// Validate file size (limit to 2MB for security).
+	// Validate file size (limit to 2MB for security)
 	if ( ! empty( $uploaded_file['size'] ) && $uploaded_file['size'] > 2 * 1024 * 1024 ) {
-		wp_safe_redirect(
-			edtm_get_admin_page_url(
-				array(
-					'edtm-import' => '0',
-					'edtm-error'  => 'file_too_large',
-				)
-			)
-		);
+		wp_safe_redirect( edtm_get_admin_page_url( array( 'edtm-import' => '0', 'edtm-error' => 'file_too_large' ) ) );
 		exit;
 	}
 
-	// Validate file type.
+	// Validate file type
 	$file_type = wp_check_filetype( $uploaded_file['name'], array( 'json' => 'application/json' ) );
 	if ( 'json' !== $file_type['ext'] ) {
-		wp_safe_redirect(
-			edtm_get_admin_page_url(
-				array(
-					'edtm-import' => '0',
-					'edtm-error'  => 'invalid_file_type',
-				)
-			)
-		);
+		wp_safe_redirect( edtm_get_admin_page_url( array( 'edtm-import' => '0', 'edtm-error' => 'invalid_file_type' ) ) );
 		exit;
 	}
 
-	// Read file content (tmp_name is already validated).
-	// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_get_contents -- Reading uploaded tmp file is safe.
+	// Read file content (tmp_name is already validated)
 	$content = file_get_contents( $uploaded_file['tmp_name'] );
 	$data    = json_decode( $content, true );
 
@@ -372,8 +297,7 @@ function edtm_handle_import_tokens() {
 		$title = isset( $c['title'] ) ? sanitize_text_field( $c['title'] ) : '';
 		$hex   = isset( $c['color'] ) ? sanitize_hex_color( $c['color'] ) : '';
 		$id    = isset( $c['id'] ) ? sanitize_text_field( $c['id'] ) : '';
-		if ( '' === $title || '' === $hex ) {
-			continue; }
+		if ( '' === $title || '' === $hex ) { continue; }
 		$colors_norm[] = array(
 			'id'    => $preserve_ids ? $id : '',
 			'title' => $title,
@@ -389,8 +313,7 @@ function edtm_handle_import_tokens() {
 		$size        = isset( $f['size'] ) ? edtm_sanitize_font_size( $f['size'] ) : '';
 		$weight      = isset( $f['weight'] ) ? absint( $f['weight'] ) : 0;
 		$line_height = isset( $f['line_height'] ) ? edtm_sanitize_line_height( $f['line_height'] ) : '';
-		if ( '' === $title ) {
-			continue; }
+		if ( '' === $title ) { continue; }
 		$fonts_norm[] = array(
 			'id'          => $preserve_ids ? $id : '',
 			'title'       => $title,
@@ -424,35 +347,24 @@ function edtm_handle_import_tokens() {
 		$ok = ( 'success' === edtm_apply_kit_settings_from_normalized( $colors_norm, $fonts_norm ) );
 	}
 
-	// Persist user's preference (detect robustly).
+	// Persist user's preference (detect robustly)
 	$current_section = edtm_detect_section_from_request();
-	$user_id         = get_current_user_id();
+	$user_id = get_current_user_id();
 	if ( $user_id ) {
 		update_user_meta( $user_id, 'edtm_last_active_section', $current_section );
 	}
 
-	wp_safe_redirect(
-		edtm_get_admin_page_url(
-			array(
-				'settings-updated' => 1,
-				'edtm-import'      => $ok ? '1' : '0',
-				'edtm_section'     => $current_section,
-				'edtm_view'        => 'manage',
-			)
-		)
-	);
+	wp_safe_redirect( edtm_get_admin_page_url( array(
+		'settings-updated' => 1,
+		'edtm-import'      => $ok ? '1' : '0',
+		'edtm_section'     => $current_section,
+		'edtm_view'        => 'manage',
+	) ) );
 	exit;
 }
 
 /**
  * Replace Site Settings directly via meta (Elementor-agnostic), with clamp handling.
- */
-/**
- * Replace Site Settings directly via meta (Elementor-agnostic), with clamp handling.
- *
- * @param array $colors_norm Normalized colors.
- * @param array $fonts_norm  Normalized fonts.
- * @return bool True on success.
  */
 function edtm_import_apply_replace( $colors_norm, $fonts_norm ) {
 	if ( ! function_exists( 'edtm_get_active_kit_id' ) ) {
@@ -462,10 +374,10 @@ function edtm_import_apply_replace( $colors_norm, $fonts_norm ) {
 	if ( $kit_id <= 0 ) {
 		return false;
 	}
-	$settings       = get_post_meta( $kit_id, '_elementor_page_settings', true );
-	$settings       = is_array( $settings ) ? $settings : array();
+	$settings = get_post_meta( $kit_id, '_elementor_page_settings', true );
+	$settings = is_array( $settings ) ? $settings : array();
 	$existing_fonts = isset( $settings['custom_typography'] ) && is_array( $settings['custom_typography'] ) ? $settings['custom_typography'] : array();
-	$prefix         = function_exists( 'edtm_detect_typo_prefix' ) ? edtm_detect_typo_prefix( $existing_fonts ) : 'typography_typo';
+	$prefix = function_exists( 'edtm_detect_typo_prefix' ) ? edtm_detect_typo_prefix( $existing_fonts ) : 'typography_typo';
 
 	$final_colors = array();
 	foreach ( $colors_norm as $c ) {
@@ -481,55 +393,39 @@ function edtm_import_apply_replace( $colors_norm, $fonts_norm ) {
 		$id = ! empty( $f['id'] ) ? $f['id'] : ( 'edtm_t_' . strtolower( wp_generate_password( 8, false, false ) ) );
 
 		$item = array(
-			'_id'                        => $id,
-			'title'                      => $f['title'],
-			$prefix . '_typography'      => 'custom',
-			'typography_typo'            => 'custom',
+			'_id'   => $id,
+			'title' => $f['title'],
+			$prefix . '_typography' => 'custom',
+			'typography_typo'       => 'custom',
 			'typography_typo_typography' => 'custom',
 		);
 		if ( ! empty( $f['family'] ) ) {
-			$first_family                     = trim( explode( ',', $f['family'] )[0] );
+			$first_family = trim( explode( ',', $f['family'] )[0] );
 			$item[ $prefix . '_font_family' ] = $first_family;
-			$item['typography_font_family']   = $first_family;
+			$item['typography_font_family' ]  = $first_family;
 		}
 		if ( ! empty( $f['size'] ) && preg_match( '/^clamp\(.+\)$/i', $f['size'] ) ) {
-			$item[ $prefix . '_font_size_custom' ]    = $f['size'];
-			$item['typography_font_size_custom']      = $f['size'];
-			$item['typography_typo_font_size_custom'] = $f['size'];
-			$item[ $prefix . '_font_size' ]           = array(
-				'unit'  => 'custom',
-				'size'  => $f['size'],
-				'sizes' => array(),
-			);
-			$item['typography_font_size']             = array(
-				'unit'  => 'custom',
-				'size'  => $f['size'],
-				'sizes' => array(),
-			);
+			$item[ $prefix . '_font_size_custom' ] = $f['size'];
+			$item['typography_font_size_custom' ]  = $f['size'];
+			$item['typography_typo_font_size_custom' ] = $f['size'];
+			$item[ $prefix . '_font_size' ] = array( 'unit' => 'custom', 'size' => $f['size'], 'sizes' => array() );
+			$item['typography_font_size' ]  = array( 'unit' => 'custom', 'size' => $f['size'], 'sizes' => array() );
 		} elseif ( ! empty( $f['size'] ) && preg_match( '/^\d*\.?\d+\s*(px|rem|em)$/i', $f['size'] ) ) {
 			if ( function_exists( 'edtm_to_elementor_dimension' ) ) {
 				$dim = edtm_to_elementor_dimension( $f['size'] );
 				if ( $dim ) {
 					$item[ $prefix . '_font_size' ] = $dim;
-					$item['typography_font_size']   = $dim;
+					$item['typography_font_size' ]  = $dim;
 				}
 			}
 		}
 		if ( ! empty( $f['weight'] ) ) {
 			$item[ $prefix . '_font_weight' ] = (string) absint( $f['weight'] );
-			$item['typography_font_weight']   = (string) absint( $f['weight'] );
+			$item['typography_font_weight' ]  = (string) absint( $f['weight'] );
 		}
 		if ( ! empty( $f['line_height'] ) && preg_match( '/^\s*(\d*\.?\d+)\s*em\s*$/i', $f['line_height'], $m ) ) {
-			$item[ $prefix . '_line_height' ] = array(
-				'unit'  => 'em',
-				'size'  => (float) $m[1],
-				'sizes' => array(),
-			);
-			$item['typography_line_height']   = array(
-				'unit'  => 'em',
-				'size'  => (float) $m[1],
-				'sizes' => array(),
-			);
+			$item[ $prefix . '_line_height' ] = array( 'unit' => 'em', 'size' => (float) $m[1], 'sizes' => array() );
+			$item['typography_line_height' ]  = array( 'unit' => 'em', 'size' => (float) $m[1], 'sizes' => array() );
 		}
 		$final_fonts[] = $item;
 	}
@@ -540,12 +436,7 @@ function edtm_import_apply_replace( $colors_norm, $fonts_norm ) {
 	update_post_meta( $kit_id, '_elementor_page_settings', $settings );
 
 	if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->files_manager ) ) {
-		try {
-			\Elementor\Plugin::$instance->files_manager->clear_cache();
-		} catch ( \Throwable $e ) {
-			// Intentionally ignored: clear_cache may be unavailable.
-			$__edtm_ignore = true;
-		}
+		try { \Elementor\Plugin::$instance->files_manager->clear_cache(); } catch ( \Throwable $e ) {}
 	}
 	return true;
 }
@@ -565,14 +456,12 @@ function edtm_handle_pull_from_kit() {
 
 	$colors_option = array();
 	foreach ( $colors as $c ) {
-		if ( empty( $c['title'] ) || empty( $c['color'] ) ) {
-			continue; }
+		if ( empty( $c['title'] ) || empty( $c['color'] ) ) { continue; }
 		$colors_option[ $c['title'] ] = $c['color'];
 	}
 	$fonts_option = array();
 	foreach ( $fonts as $f ) {
-		if ( empty( $f['title'] ) ) {
-			continue; }
+		if ( empty( $f['title'] ) ) { continue; }
 		$fonts_option[ $f['title'] ] = array(
 			'family'      => isset( $f['family'] ) ? $f['family'] : '',
 			'size'        => isset( $f['size'] ) ? $f['size'] : '',
@@ -584,25 +473,21 @@ function edtm_handle_pull_from_kit() {
 	update_option( 'elementor_scheme_color', $colors_option );
 	update_option( 'elementor_scheme_typography', $fonts_option );
 
-	// Preserve current section and persist preference (detect robustly).
+	// Preserve current section and persist preference (detect robustly)
 	$current_section = edtm_detect_section_from_request();
 
-	// Persist user's preference server-side so future loads remain on this section.
+	// Persist user's preference server-side so future loads remain on this section
 	$user_id = get_current_user_id();
 	if ( $user_id ) {
 		update_user_meta( $user_id, 'edtm_last_active_section', $current_section );
 	}
 
-	wp_safe_redirect(
-		edtm_get_admin_page_url(
-			array(
-				'settings-updated' => 1,
-				'edtm-pulled'      => 1,
-				'edtm_section'     => $current_section,
-				'edtm_view'        => 'manage',
-			)
-		)
-	);
+	wp_safe_redirect( edtm_get_admin_page_url( array(
+		'settings-updated' => 1,
+		'edtm-pulled'      => 1,
+		'edtm_section'     => $current_section,
+		'edtm_view'        => 'manage',
+	) ) );
 	exit;
 }
 
@@ -620,8 +505,7 @@ function edtm_handle_push_to_kit() {
 
 	$colors_norm = array();
 	foreach ( (array) $opt_colors as $title => $hex ) {
-		if ( empty( $title ) || empty( $hex ) ) {
-			continue; }
+		if ( empty( $title ) || empty( $hex ) ) { continue; }
 		$colors_norm[] = array(
 			'id'    => '',
 			'title' => (string) $title,
@@ -630,7 +514,7 @@ function edtm_handle_push_to_kit() {
 	}
 	$fonts_norm = array();
 	foreach ( (array) $opt_fonts as $title => $props ) {
-		$props        = is_array( $props ) ? $props : array();
+		$props = is_array( $props ) ? $props : array();
 		$fonts_norm[] = array(
 			'id'          => '',
 			'title'       => (string) $title,
@@ -643,22 +527,19 @@ function edtm_handle_push_to_kit() {
 
 	$ok = edtm_import_apply_replace( $colors_norm, $fonts_norm );
 
-	// Preserve current section and persist preference (detect robustly).
+
+	// Preserve current section and persist preference (detect robustly)
 	$current_section = edtm_detect_section_from_request();
-	$user_id         = get_current_user_id();
+	$user_id = get_current_user_id();
 	if ( $user_id ) {
 		update_user_meta( $user_id, 'edtm_last_active_section', $current_section );
 	}
 
-	wp_safe_redirect(
-		edtm_get_admin_page_url(
-			array(
-				'settings-updated' => 1,
-				'edtm-pushed'      => $ok ? 1 : 0,
-				'edtm_section'     => $current_section,
-				'edtm_view'        => 'manage',
-			)
-		)
-	);
+	wp_safe_redirect( edtm_get_admin_page_url( array(
+		'settings-updated' => 1,
+		'edtm-pushed'      => $ok ? 1 : 0,
+		'edtm_section'     => $current_section,
+		'edtm_view'        => 'manage',
+	) ) );
 	exit;
 }

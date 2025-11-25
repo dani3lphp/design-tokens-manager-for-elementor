@@ -557,41 +557,6 @@ See [LICENSE](LICENSE) file for full details.
 
 ## 📝 Changelog
 
-## Contributing and Development
-
-We use WordPress Coding Standards (WPCS) for linting. Internationalization (i18n) is retained in the plugin to comply with WordPress.org guidelines.
-
-Setup with Composer (recommended):
-
-1. Install dev dependencies
-
-```
-composer require --dev squizlabs/php_codesniffer dealerdirect/phpcodesniffer-composer-installer
-composer require --dev wp-coding-standards/wpcs phpcompatibility/php-compatibility
-```
-
-2. Verify standards are registered
-
-```
-vendor/bin/phpcs -i
-```
-
-3. Run checks and auto-fixes
-
-```
-# Lint entire project using .phpcs.xml.dist
-vendor/bin/phpcs
-
-# Attempt to fix fixable issues
-vendor/bin/phpcbf
-```
-
-Alternatively, if you have phpcs installed globally, ensure WPCS is installed and configured via installed_paths and simply run `phpcs` and `phpcbf`.
-
-Notes:
-- We intentionally read certain GET/POST parameters (e.g., edtm_section) for UI state; actions are nonce-protected separately. These reads are annotated with phpcs:ignore and comments.
-- Keep i18n strings intact and always use the text domain `design-tokens-manager-for-elementor`.
-
 ### 1.5.1 - 2024
 - Fixed undefined variable bug in admin interface
 - Enhanced XSS security in font family sanitization

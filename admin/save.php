@@ -1,44 +1,17 @@
 <?php
 /**
  * Save handler and Elementor Kit sync (merge-based with clamp() support + meta fallback).
- *
- * @package Design_Tokens_Manager_For_Elementor
  */
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
-/**
- * Sanitizers for font family, size, and line height.
- *
- * These functions aim to avoid XSS by stripping tags and limiting allowed characters
- * while retaining flexibility for common font stacks and CSS units.
- */
 /* ========== Sanitizers ========== */
-/**
- * Sanitize font family string.
- *
- * Strips tags and removes quotes, backslashes, and angle brackets. Allows letters,
- * numbers, spaces, commas, dashes and underscore.
- *
- * @param string $value Raw font family value.
- * @return string Sanitized font family.
- */
 function edtm_sanitize_font_family( $value ) {
 	$value = wp_strip_all_tags( (string) $value );
 	$value = str_replace( array( '"', "'", '\\', '<', '>' ), '', $value );
 	$value = preg_replace( '/[^a-z0-9\-,\s_]/i', '', $value );
 	return trim( $value );
 }
-/**
- * Sanitize font size string.
- *
- * Accepts either a numeric value with unit (px|rem|em) or a clamp(...) expression.
- * Returns empty string if invalid.
- *
- * @param string $value Raw font size value.
- * @return string Sanitized font size or empty string.
- */
 function edtm_sanitize_font_size( $value ) {
 	$value = wp_strip_all_tags( (string) $value );
 	$value = trim( $value );
@@ -50,14 +23,6 @@ function edtm_sanitize_font_size( $value ) {
 	}
 	return '';
 }
-/**
- * Sanitize line-height string.
- *
- * Accepts numeric value with em unit. Returns empty string if invalid.
- *
- * @param string $value Raw line-height value.
- * @return string Sanitized line-height or empty string.
- */
 function edtm_sanitize_line_height( $value ) {
 	$value = wp_strip_all_tags( (string) $value );
 	$value = trim( $value );
@@ -68,133 +33,60 @@ function edtm_sanitize_line_height( $value ) {
 }
 
 /* ========== Parsing helpers (bulk with clamp/font stacks) ========== */
-/**
- * Split a comma-separated string by top-level commas, keeping parentheses groups intact.
- *
- * @param string $text Input text to split.
- * @return array<string> List of top-level segments.
- */
 function edtm_split_top_level( $text ) {
-	$out   = array();
-	$buf   = '';
-	$depth = 0;
-	$len   = strlen( $text );
+	$out = array(); $buf = ''; $depth = 0; $len = strlen( $text );
 	for ( $i = 0; $i < $len; $i++ ) {
 		$ch = $text[ $i ];
-		if ( '(' === $ch ) {
-			++$depth;
-			$buf .= $ch;
-			continue; }
-		if ( ')' === $ch ) {
-			if ( $depth > 0 ) {
-				--$depth;
-			} $buf .= $ch;
-			continue; }
-		if ( ',' === $ch && 0 === $depth ) {
-			$out[] = trim( $buf );
-			$buf   = '';
-			continue; }
+		if ( '(' === $ch ) { $depth++; $buf .= $ch; continue; }
+		if ( ')' === $ch ) { if ( $depth > 0 ) { $depth--; } $buf .= $ch; continue; }
+		if ( ',' === $ch && 0 === $depth ) { $out[] = trim( $buf ); $buf = ''; continue; }
 		$buf .= $ch;
 	}
-	if ( '' !== trim( $buf ) ) {
-		$out[] = trim( $buf ); }
+	if ( '' !== trim( $buf ) ) { $out[] = trim( $buf ); }
 	return $out;
 }
-/**
- * Detect if a string represents a valid size token.
- *
- * Supports clamp(...) or numeric + unit (px|rem|em).
- *
- * @param string $value Token candidate.
- * @return bool True if value is a size token.
- */
 function edtm_is_size_token( $value ) {
 	$value = trim( (string) $value );
-	if ( preg_match( '/^clamp\(.+\)$/i', $value ) ) {
-		return true; }
-	if ( preg_match( '/^\d*\.?\d+\s*(px|rem|em)$/i', $value ) ) {
-		return true; }
+	if ( preg_match( '/^clamp\(.+\)$/i', $value ) ) { return true; }
+	if ( preg_match( '/^\d*\.?\d+\s*(px|rem|em)$/i', $value ) ) { return true; }
 	return false;
 }
-/**
- * Parse bulk color lines in the format "Name: #hex".
- *
- * @param string $text Multiline text.
- * @return array<int, array{id:string,title:string,color:string}> Normalized tokens.
- */
 function edtm_parse_bulk_colors( $text ) {
-	$tokens = array();
-	if ( empty( $text ) ) {
-		return $tokens;
-	}
+	$tokens = array(); if ( empty( $text ) ) return $tokens;
 	$lines = preg_split( '/\r\n|\r|\n/', $text );
 	foreach ( $lines as $line ) {
-		$line = trim( $line );
-		if ( '' === $line || false === strpos( $line, ':' ) ) {
-			continue;
-		}
+		$line = trim( $line ); if ( '' === $line || false === strpos( $line, ':' ) ) continue;
 		list( $name, $color ) = array_map( 'trim', explode( ':', $line, 2 ) );
-		$name                 = sanitize_text_field( $name );
-		$color                = sanitize_hex_color( $color );
-		if ( $name && $color ) {
-			$tokens[] = array(
-				'id'    => '',
-				'title' => $name,
-				'color' => $color,
-			); }
+		$name = sanitize_text_field( $name ); $color = sanitize_hex_color( $color );
+		if ( $name && $color ) { $tokens[] = array( 'id' => '', 'title' => $name, 'color' => $color ); }
 	}
 	return $tokens;
 }
-/**
- * Parse bulk font lines in the format "Name: Family, Size, Weight, Line-height".
- * Size may be clamp(...) or numeric+unit. Weight is numeric, line-height is em.
- *
- * @param string $text Multiline text.
- * @return array<int, array{id:string,title:string,family:string,size:string,weight:int,line_height:string}> Normalized tokens.
- */
 function edtm_parse_bulk_fonts( $text ) {
-	$tokens = array();
-	if ( empty( $text ) ) {
-		return $tokens;
-	}
+	$tokens = array(); if ( empty( $text ) ) return $tokens;
 	$lines = preg_split( '/\r\n|\r|\n/', $text );
 	foreach ( $lines as $line ) {
-		$line = trim( $line );
-		if ( '' === $line || false === strpos( $line, ':' ) ) {
-			continue;
-		}
+		$line = trim( $line ); if ( '' === $line || false === strpos( $line, ':' ) ) continue;
 		list( $name, $rest ) = array_map( 'trim', explode( ':', $line, 2 ) );
-		$name                = sanitize_text_field( $name );
-		if ( '' === $name ) {
-			continue;
-		}
+		$name = sanitize_text_field( $name ); if ( '' === $name ) continue;
 
 		$parts = edtm_split_top_level( $rest );
 
 		$family_parts = array();
-		$size         = '';
-		$weight       = 0;
-		$line_height  = '';
+		$size = ''; $weight = 0; $line_height = '';
 
 		foreach ( $parts as $seg ) {
-			if ( '' === $size && edtm_is_size_token( $seg ) ) {
-				$size = edtm_sanitize_font_size( $seg );
-				continue; }
-			if ( '' !== $size && 0 === $weight && preg_match( '/^\d{2,4}$/', trim( $seg ) ) ) {
-				$weight = absint( trim( $seg ) );
-				continue; }
+			if ( '' === $size && edtm_is_size_token( $seg ) ) { $size = edtm_sanitize_font_size( $seg ); continue; }
+			if ( '' !== $size && 0 === $weight && preg_match( '/^\d{2,4}$/', trim( $seg ) ) ) { $weight = absint( trim( $seg ) ); continue; }
 			if ( '' !== $size && '' === $line_height ) {
 				$lh = edtm_sanitize_line_height( $seg );
-				if ( '' !== $lh ) {
-					$line_height = $lh;
-					continue; }
+				if ( '' !== $lh ) { $line_height = $lh; continue; }
 			}
 			$family_parts[] = $seg;
 		}
 
 		$family = edtm_sanitize_font_family( implode( ', ', $family_parts ) );
-		if ( $weight && ( $weight < 100 || $weight > 1000 ) ) {
-			$weight = 400; }
+		if ( $weight && ( $weight < 100 || $weight > 1000 ) ) { $weight = 400; }
 
 		$tokens[] = array(
 			'id'          => '',
@@ -209,39 +101,21 @@ function edtm_parse_bulk_fonts( $text ) {
 }
 
 /* ========== Elementor helpers ========== */
-/**
- * Get active Elementor Kit object via Plugin API when possible.
- *
- * @return mixed Kit object or false.
- */
 function edtm_get_active_kit() {
 	if ( class_exists( '\Elementor\Plugin' ) ) {
 		try {
 			$plugin = ! empty( \Elementor\Plugin::$instance ) ? \Elementor\Plugin::$instance : ( method_exists( '\Elementor\Plugin', 'instance' ) ? \Elementor\Plugin::instance() : null );
 			if ( $plugin && isset( $plugin->kits_manager ) && is_object( $plugin->kits_manager ) ) {
 				$kit = $plugin->kits_manager->get_active_kit();
-				if ( $kit ) {
-					return $kit; }
+				if ( $kit ) { return $kit; }
 			}
-		} catch ( \Throwable $e ) {
-			// Intentionally ignored: Elementor plugin API not available.
-			$plugin = null;
-		}
+		} catch ( \Throwable $e ) {}
 	}
 	if ( class_exists( '\Elementor\Core\Kits\Documents\Kit' ) && method_exists( '\Elementor\Core\Kits\Documents\Kit', 'get_instance' ) ) {
-		try {
-			return \Elementor\Core\Kits\Documents\Kit::get_instance();
-		} catch ( \Throwable $e ) {
-			return false; // Intentionally ignored: fallback to option/query.
-		}
+		try { return \Elementor\Core\Kits\Documents\Kit::get_instance(); } catch ( \Throwable $e ) { return false; }
 	}
 	return false;
 }
-/**
- * Resolve active Elementor Kit post ID from API, option, or fallback query.
- *
- * @return int Kit post ID or 0 if not found.
- */
 function edtm_get_active_kit_id() {
 	if ( class_exists( '\Elementor\Plugin' ) ) {
 		try {
@@ -249,97 +123,55 @@ function edtm_get_active_kit_id() {
 			if ( $plugin && isset( $plugin->kits_manager ) && is_object( $plugin->kits_manager ) ) {
 				if ( method_exists( $plugin->kits_manager, 'get_active_id' ) ) {
 					$id = (int) $plugin->kits_manager->get_active_id();
-					if ( $id > 0 ) {
-						return $id; }
+					if ( $id > 0 ) { return $id; }
 				}
 				$kit = $plugin->kits_manager->get_active_kit();
 				if ( $kit && method_exists( $kit, 'get_main_id' ) ) {
 					$id = (int) $kit->get_main_id();
-					if ( $id > 0 ) {
-						return $id; }
+					if ( $id > 0 ) { return $id; }
 				}
 				if ( $kit && method_exists( $kit, 'get_id' ) ) {
 					$id = (int) $kit->get_id();
-					if ( $id > 0 ) {
-						return $id; }
+					if ( $id > 0 ) { return $id; }
 				}
 			}
-		} catch ( \Throwable $e ) {
-			// Intentionally ignored: Elementor plugin API not available.
-			$plugin = null;
-		}
+		} catch ( \Throwable $e ) {}
 	}
 	$id = (int) get_option( 'elementor_active_kit', 0 );
-	if ( $id > 0 ) {
-		return $id; }
-	// Fallback: query for kit post type with meta_query (slow query acceptable as last resort fallback).
-	$q = new \WP_Query(
-		array(
-			'post_type'      => 'elementor_library',
-			'post_status'    => 'publish',
-			'posts_per_page' => 1,
-			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Last resort fallback when option and API unavailable, runs infrequently.
-			array(
-		'key'   => '_elementor_template_type',
-		'value' => 'kit',
-			),
-			),
-		)
-	);
+	if ( $id > 0 ) { return $id; }
+	// Fallback: query for kit post type with meta_query (slow query acceptable as last resort fallback)
+	$q = new \WP_Query( array(
+		'post_type'      => 'elementor_library',
+		'post_status'    => 'publish',
+		'posts_per_page' => 1,
+		'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Last resort fallback when option and API unavailable, runs infrequently.
+			array( 'key' => '_elementor_template_type', 'value' => 'kit' ),
+		),
+	) );
 	if ( $q->have_posts() ) {
 		return (int) $q->posts[0]->ID;
 	}
 	return 0;
 }
-/**
- * Add an admin notice (transient) to show status on our page.
- *
- * @param string $message Message to display.
- * @param string $type    Notice type: success|warning.
- * @return void
- */
 function edtm_add_sync_notice( $message, $type = 'success' ) {
-	set_transient(
-		'edtm_sync_notice',
-		array(
-			'message' => (string) $message,
-			'type'    => (string) $type,
-		),
-		60
-	);
+	set_transient( 'edtm_sync_notice', array( 'message' => (string) $message, 'type' => (string) $type ), 60 );
 }
 
 /* ========== Dimension helpers (numeric only; clamp custom handled elsewhere) ========== */
-/**
- * Convert a CSS value string to Elementor-like dimension array.
- *
- * @param string $value CSS value, e.g., 16px, 1rem, 1.2em.
- * @return array|null Dimension array or null if invalid.
- */
 function edtm_to_elementor_dimension( $value ) {
 	$value = trim( (string) $value );
 	if ( preg_match( '/^\s*(\d*\.?\d+)\s*(px|rem|em)\s*$/i', $value, $m ) ) {
-		return array(
-			'unit'  => strtolower( $m[2] ),
-			'size'  => (float) $m[1],
-			'sizes' => array(),
-		);
+		return array( 'unit' => strtolower( $m[2] ), 'size' => (float) $m[1], 'sizes' => array() );
 	}
 	return null;
 }
-/**
- * Convert Elementor-like dimension array back to CSS size string.
- *
- * @param array|string $dim Dimension array or raw string.
- * @return string CSS size string or empty string.
- */
 function edtm_dimension_to_string( $dim ) {
 	if ( is_array( $dim ) && isset( $dim['unit'] ) && isset( $dim['size'] ) ) {
 		$unit = trim( (string) $dim['unit'] );
 		$size = $dim['size'];
 		if ( is_numeric( $size ) ) {
 			$size_num = (float) $size;
-			return ( ( (float) (int) $size_num === $size_num ) ? (string) (int) $size_num : (string) $size_num ) . $unit;
+			return ( ( $size_num == (int) $size_num ) ? (string) (int) $size_num : (string) $size_num ) . $unit;
 		}
 		if ( is_string( $size ) && '' !== trim( $size ) ) {
 			return trim( $size );
@@ -349,41 +181,22 @@ function edtm_dimension_to_string( $dim ) {
 }
 
 /* ========== Prefix + custom-size keys detection ========== */
-/**
- * Detect best typography prefix from existing fonts array.
- *
- * @param array $existing_fonts Fonts array from Kit.
- * @return string Prefix string, defaults to 'typography_typo'.
- */
 function edtm_detect_typo_prefix( $existing_fonts ) {
-	if ( ! is_array( $existing_fonts ) ) {
-		return 'typography_typo'; }
+	if ( ! is_array( $existing_fonts ) ) { return 'typography_typo'; }
 	foreach ( $existing_fonts as $item ) {
-		if ( ! is_array( $item ) ) {
-			continue; }
+		if ( ! is_array( $item ) ) { continue; }
 		foreach ( array_keys( $item ) as $key ) {
-			if ( preg_match( '/^(.+)_font_size_custom$/', $key, $m ) ) {
-				return $m[1]; }
-			if ( preg_match( '/^(.+)_font_size$/', $key, $m ) ) {
-				return $m[1]; }
-			if ( preg_match( '/^(.+)_font_family$/', $key, $m ) ) {
-				return $m[1]; }
-			if ( preg_match( '/^(.+)_typography$/', $key, $m ) ) {
-				return $m[1]; }
+			if ( preg_match( '/^(.+)_font_size_custom$/', $key, $m ) ) { return $m[1]; }
+			if ( preg_match( '/^(.+)_font_size$/', $key, $m ) ) { return $m[1]; }
+			if ( preg_match( '/^(.+)_font_family$/', $key, $m ) ) { return $m[1]; }
+			if ( preg_match( '/^(.+)_typography$/', $key, $m ) ) { return $m[1]; }
 		}
 	}
 	return 'typography_typo';
 }
-/**
- * Collect custom size keys in a typography item.
- *
- * @param array $item Font item array.
- * @return array List of keys.
- */
 function edtm_collect_item_custom_size_keys( $item ) {
 	$keys = array();
-	if ( ! is_array( $item ) ) {
-		return $keys; }
+	if ( ! is_array( $item ) ) { return $keys; }
 	foreach ( array_keys( $item ) as $k ) {
 		if ( preg_match( '/_font_size_custom$/', $k ) ) {
 			$keys[] = $k;
@@ -391,104 +204,48 @@ function edtm_collect_item_custom_size_keys( $item ) {
 	}
 	return array_values( array_unique( $keys ) );
 }
-/**
- * All potential custom size keys based on prefix.
- *
- * @param string $prefix Typography prefix.
- * @return array Keys list.
- */
 function edtm_all_size_custom_keys( $prefix ) {
 	$prefix = (string) $prefix;
-	return array_values(
-		array_unique(
-			array(
-				$prefix . '_font_size_custom',
-				'typography_font_size_custom',
-				'typography_typo_font_size_custom',
-			)
-		)
-	);
+	return array_values( array_unique( array(
+		$prefix . '_font_size_custom',
+		'typography_font_size_custom',
+		'typography_typo_font_size_custom',
+	) ) );
 }
-/**
- * Set clamp value on an item, updating both custom keys and size placeholders.
- *
- * @param array  $item   Font item array (by ref).
- * @param string $prefix Typography prefix.
- * @param string $clamp  Clamp string.
- * @return void
- */
 function edtm_set_clamp_on_item( &$item, $prefix, $clamp ) {
 	$existing_custom_keys = edtm_collect_item_custom_size_keys( $item );
-	$targets              = array_unique( array_merge( $existing_custom_keys, edtm_all_size_custom_keys( $prefix ) ) );
+	$targets = array_unique( array_merge( $existing_custom_keys, edtm_all_size_custom_keys( $prefix ) ) );
 	foreach ( $targets as $k ) {
 		$item[ $k ] = $clamp;
 	}
-	// Some builds read clamp from size when unit=custom.
-	$item[ $prefix . '_font_size' ] = array(
-		'unit'  => 'custom',
-		'size'  => $clamp,
-		'sizes' => array(),
-	);
-	$item['typography_font_size']   = array(
-		'unit'  => 'custom',
-		'size'  => $clamp,
-		'sizes' => array(),
-	);
+	// Some builds read clamp from size when unit=custom:
+	$item[ $prefix . '_font_size' ] = array( 'unit' => 'custom', 'size' => $clamp, 'sizes' => array() );
+	$item['typography_font_size' ]  = array( 'unit' => 'custom', 'size' => $clamp, 'sizes' => array() );
 }
 
 /* ========== ID generators ========== */
-/**
- * Generate a random color token ID.
- *
- * @return string Token ID.
- */
-function edtm_generate_color_id() {
-	return EDTM_COLOR_ID_PREFIX . strtolower( wp_generate_password( 8, false, false ) ); }
-/**
- * Generate a random typography token ID.
- *
- * @return string Token ID.
- */
-function edtm_generate_typo_id() {
-	return EDTM_TYPO_ID_PREFIX . strtolower( wp_generate_password( 8, false, false ) ); }
+function edtm_generate_color_id() { return EDTM_COLOR_ID_PREFIX . strtolower( wp_generate_password( 8, false, false ) ); }
+function edtm_generate_typo_id()  { return EDTM_TYPO_ID_PREFIX  . strtolower( wp_generate_password( 8, false, false ) ); }
 
 /* ========== Meta fallback (merge-based) ========== */
-/**
- * Get kit settings meta array for a given kit post ID.
- *
- * @param int $kit_id Kit post ID.
- * @return array Settings array.
- */
 function edtm_get_kit_settings_meta( $kit_id ) {
-	if ( $kit_id <= 0 ) {
-		return array(); }
+	if ( $kit_id <= 0 ) { return array(); }
 	$settings = get_post_meta( $kit_id, '_elementor_page_settings', true );
 	return ( false !== $settings && is_array( $settings ) ) ? $settings : array();
 }
-/**
- * Apply to Kit via post meta (merge-based fallback).
- *
- * @param array $colors_norm Normalized colors.
- * @param array $fonts_norm  Normalized fonts.
- * @return bool True if meta saved, false otherwise.
- */
 function edtm_apply_kit_settings_via_meta_merged( $colors_norm, $fonts_norm ) {
 	$kit_id = edtm_get_active_kit_id();
-	if ( $kit_id <= 0 ) {
-		return false; }
+	if ( $kit_id <= 0 ) { return false; }
 
-	$settings        = edtm_get_kit_settings_meta( $kit_id );
+	$settings = edtm_get_kit_settings_meta( $kit_id );
 	$existing_colors = isset( $settings['custom_colors'] ) && is_array( $settings['custom_colors'] ) ? $settings['custom_colors'] : array();
 	$existing_fonts  = isset( $settings['custom_typography'] ) && is_array( $settings['custom_typography'] ) ? $settings['custom_typography'] : array();
 
-	$by_id    = array();
-	$by_title = array();
+	$by_id = array(); $by_title = array();
 	foreach ( $existing_fonts as $it ) {
 		if ( is_array( $it ) ) {
-			if ( ! empty( $it['_id'] ) ) {
-				$by_id[ $it['_id'] ] = $it; }
-			if ( ! empty( $it['title'] ) ) {
-				$by_title[ strtolower( $it['title'] ) ] = $it; }
+			if ( ! empty( $it['_id'] ) ) { $by_id[ $it['_id'] ] = $it; }
+			if ( ! empty( $it['title'] ) ) { $by_title[ strtolower( $it['title'] ) ] = $it; }
 		}
 	}
 	$prefix = edtm_detect_typo_prefix( $existing_fonts );
@@ -498,23 +255,16 @@ function edtm_apply_kit_settings_via_meta_merged( $colors_norm, $fonts_norm ) {
 		$title = isset( $c['title'] ) ? (string) $c['title'] : '';
 		$hex   = isset( $c['color'] ) ? (string) $c['color'] : '';
 		$id    = isset( $c['id'] ) ? (string) $c['id'] : '';
-		if ( '' === $title || '' === $hex ) {
-			continue; }
-		if ( '' === $id ) {
-			$id = edtm_generate_color_id(); }
-		$final_colors[] = array(
-			'_id'   => $id,
-			'title' => $title,
-			'color' => $hex,
-		);
+		if ( '' === $title || '' === $hex ) { continue; }
+		if ( '' === $id ) { $id = edtm_generate_color_id(); }
+		$final_colors[] = array( '_id' => $id, 'title' => $title, 'color' => $hex );
 	}
 
 	$final_fonts = array();
 	foreach ( $fonts_norm as $f ) {
 		$title = isset( $f['title'] ) ? (string) $f['title'] : '';
-		if ( '' === $title ) {
-			continue; }
-		$id = isset( $f['id'] ) ? (string) $f['id'] : '';
+		if ( '' === $title ) { continue; }
+		$id    = isset( $f['id'] ) ? (string) $f['id'] : '';
 
 		$family      = isset( $f['family'] ) ? (string) $f['family'] : '';
 		$size        = isset( $f['size'] ) ? (string) $f['size'] : '';
@@ -528,21 +278,20 @@ function edtm_apply_kit_settings_via_meta_merged( $colors_norm, $fonts_norm ) {
 			$base = $by_title[ strtolower( $title ) ];
 			$id   = isset( $base['_id'] ) ? $base['_id'] : $id;
 		}
-		if ( '' === $id ) {
-			$id = edtm_generate_typo_id(); }
+		if ( '' === $id ) { $id = edtm_generate_typo_id(); }
 
-		$item          = is_array( $base ) ? $base : array();
+		$item = is_array( $base ) ? $base : array();
 		$item['_id']   = $id;
 		$item['title'] = $title;
 
-		$item[ $prefix . '_typography' ]    = 'custom';
-		$item['typography_typo']            = 'custom';
+		$item[ $prefix . '_typography' ] = 'custom';
+		$item['typography_typo']         = 'custom';
 		$item['typography_typo_typography'] = 'custom';
 
 		if ( '' !== $family ) {
-			$first                            = trim( explode( ',', $family )[0] );
+			$first = trim( explode( ',', $family )[0] );
 			$item[ $prefix . '_font_family' ] = $first;
-			$item['typography_font_family']   = $first;
+			$item['typography_font_family' ]  = $first;
 		}
 		if ( '' !== $size ) {
 			if ( preg_match( '/^clamp\(.+\)$/i', $size ) ) {
@@ -551,22 +300,18 @@ function edtm_apply_kit_settings_via_meta_merged( $colors_norm, $fonts_norm ) {
 				$dim = edtm_to_elementor_dimension( $size );
 				if ( $dim ) {
 					$item[ $prefix . '_font_size' ] = $dim;
-					$item['typography_font_size']   = $dim;
+					$item['typography_font_size' ]  = $dim;
 				}
 			}
 		}
 		if ( '' !== $weight ) {
 			$item[ $prefix . '_font_weight' ] = $weight;
-			$item['typography_font_weight']   = $weight;
+			$item['typography_font_weight' ]  = $weight;
 		}
 		if ( preg_match( '/^\s*(\d*\.?\d+)\s*em\s*$/i', $line_height, $m ) ) {
-			$lh_dim                           = array(
-				'unit'  => 'em',
-				'size'  => (float) $m[1],
-				'sizes' => array(),
-			);
+			$lh_dim = array( 'unit' => 'em', 'size' => (float) $m[1], 'sizes' => array() );
 			$item[ $prefix . '_line_height' ] = $lh_dim;
-			$item['typography_line_height']   = $lh_dim;
+			$item['typography_line_height' ]  = $lh_dim;
 		}
 
 		$final_fonts[] = $item;
@@ -581,13 +326,6 @@ function edtm_apply_kit_settings_via_meta_merged( $colors_norm, $fonts_norm ) {
 
 /**
  * Apply to Kit via API (merge existing items to preserve unknown keys). Fallback to meta.
- */
-/**
- * Apply to Kit via API when available, otherwise queue or fallback to meta.
- *
- * @param array $colors_norm Normalized colors.
- * @param array $fonts_norm  Normalized fonts.
- * @return string 'success' if saved, 'queued' if deferred.
  */
 function edtm_apply_kit_settings_from_normalized( $colors_norm, $fonts_norm ) {
 	$kit = edtm_get_active_kit();
@@ -605,16 +343,13 @@ function edtm_apply_kit_settings_from_normalized( $colors_norm, $fonts_norm ) {
 	}
 
 	$existing_colors = is_array( $existing_colors ) ? $existing_colors : array();
-	$existing_fonts  = is_array( $existing_fonts ) ? $existing_fonts : array();
+	$existing_fonts  = is_array( $existing_fonts ) ? $existing_fonts  : array();
 
-	$by_id    = array();
-	$by_title = array();
+	$by_id = array(); $by_title = array();
 	foreach ( $existing_fonts as $it ) {
 		if ( is_array( $it ) ) {
-			if ( ! empty( $it['_id'] ) ) {
-				$by_id[ $it['_id'] ] = $it; }
-			if ( ! empty( $it['title'] ) ) {
-				$by_title[ strtolower( $it['title'] ) ] = $it; }
+			if ( ! empty( $it['_id'] ) )     { $by_id[ $it['_id'] ] = $it; }
+			if ( ! empty( $it['title'] ) )   { $by_title[ strtolower( $it['title'] ) ] = $it; }
 		}
 	}
 	$prefix = edtm_detect_typo_prefix( $existing_fonts );
@@ -624,23 +359,16 @@ function edtm_apply_kit_settings_from_normalized( $colors_norm, $fonts_norm ) {
 		$title = isset( $c['title'] ) ? (string) $c['title'] : '';
 		$hex   = isset( $c['color'] ) ? (string) $c['color'] : '';
 		$id    = isset( $c['id'] ) ? (string) $c['id'] : '';
-		if ( '' === $title || '' === $hex ) {
-			continue; }
-		if ( '' === $id ) {
-			$id = edtm_generate_color_id(); }
-		$final_colors[] = array(
-			'_id'   => $id,
-			'title' => $title,
-			'color' => $hex,
-		);
+		if ( '' === $title || '' === $hex ) { continue; }
+		if ( '' === $id ) { $id = edtm_generate_color_id(); }
+		$final_colors[] = array( '_id' => $id, 'title' => $title, 'color' => $hex );
 	}
 
 	$final_fonts = array();
 	foreach ( $fonts_norm as $f ) {
 		$title = isset( $f['title'] ) ? (string) $f['title'] : '';
-		if ( '' === $title ) {
-			continue; }
-		$id = isset( $f['id'] ) ? (string) $f['id'] : '';
+		if ( '' === $title ) { continue; }
+		$id    = isset( $f['id'] ) ? (string) $f['id'] : '';
 
 		$family      = isset( $f['family'] ) ? (string) $f['family'] : '';
 		$size        = isset( $f['size'] ) ? (string) $f['size'] : '';
@@ -654,21 +382,20 @@ function edtm_apply_kit_settings_from_normalized( $colors_norm, $fonts_norm ) {
 			$base = $by_title[ strtolower( $title ) ];
 			$id   = isset( $base['_id'] ) ? $base['_id'] : $id;
 		}
-		if ( '' === $id ) {
-			$id = edtm_generate_typo_id(); }
+		if ( '' === $id ) { $id = edtm_generate_typo_id(); }
 
-		$item          = is_array( $base ) ? $base : array();
+		$item = is_array( $base ) ? $base : array();
 		$item['_id']   = $id;
 		$item['title'] = $title;
 
-		$item[ $prefix . '_typography' ]    = 'custom';
-		$item['typography_typo']            = 'custom';
+		$item[ $prefix . '_typography' ] = 'custom';
+		$item['typography_typo']         = 'custom';
 		$item['typography_typo_typography'] = 'custom';
 
 		if ( '' !== $family ) {
-			$first                            = trim( explode( ',', $family )[0] );
+			$first = trim( explode( ',', $family )[0] );
 			$item[ $prefix . '_font_family' ] = $first;
-			$item['typography_font_family']   = $first;
+			$item['typography_font_family' ]  = $first;
 		}
 		if ( '' !== $size ) {
 			if ( preg_match( '/^clamp\(.+\)$/i', $size ) ) {
@@ -677,22 +404,18 @@ function edtm_apply_kit_settings_from_normalized( $colors_norm, $fonts_norm ) {
 				$dim = edtm_to_elementor_dimension( $size );
 				if ( $dim ) {
 					$item[ $prefix . '_font_size' ] = $dim;
-					$item['typography_font_size']   = $dim;
+					$item['typography_font_size' ]  = $dim;
 				}
 			}
 		}
 		if ( '' !== $weight ) {
 			$item[ $prefix . '_font_weight' ] = $weight;
-			$item['typography_font_weight']   = $weight;
+			$item['typography_font_weight' ]  = $weight;
 		}
 		if ( preg_match( '/^\s*(\d*\.?\d+)\s*em\s*$/i', $line_height, $m ) ) {
-			$lh_dim                           = array(
-				'unit'  => 'em',
-				'size'  => (float) $m[1],
-				'sizes' => array(),
-			);
+			$lh_dim = array( 'unit' => 'em', 'size' => (float) $m[1], 'sizes' => array() );
 			$item[ $prefix . '_line_height' ] = $lh_dim;
-			$item['typography_line_height']   = $lh_dim;
+			$item['typography_line_height' ]  = $lh_dim;
 		}
 
 		$final_fonts[] = $item;
@@ -704,11 +427,7 @@ function edtm_apply_kit_settings_from_normalized( $colors_norm, $fonts_norm ) {
 		$kit->save();
 
 		if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->files_manager ) ) {
-			try {
-				\Elementor\Plugin::$instance->files_manager->clear_cache(); } catch ( \Throwable $e ) {
-					// Intentionally ignored: clear_cache may be unavailable.
-					$__edtm_ignore = true;
-				}
+			try { \Elementor\Plugin::$instance->files_manager->clear_cache(); } catch ( \Throwable $e ) {}
 		}
 	} catch ( \Throwable $e ) {
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
@@ -721,17 +440,9 @@ function edtm_apply_kit_settings_from_normalized( $colors_norm, $fonts_norm ) {
 }
 
 /* ========== Process queued sync early in admin and after Elementor loads ========== */
-/**
- * Process queued sync to Elementor Site Settings if pending.
- *
- * Called on admin_init and elementor/loaded to ensure delayed operations are applied.
- *
- * @return void
- */
 function edtm_process_pending_kit_sync() {
 	$pending = get_option( 'edtm_pending_kit_sync' );
-	if ( empty( $pending ) || ! is_array( $pending ) ) {
-		return; }
+	if ( empty( $pending ) || ! is_array( $pending ) ) { return; }
 
 	$colors_norm = isset( $pending['colors_norm'] ) && is_array( $pending['colors_norm'] ) ? $pending['colors_norm'] : array();
 	$fonts_norm  = isset( $pending['fonts_norm'] ) && is_array( $pending['fonts_norm'] ) ? $pending['fonts_norm'] : array();
@@ -746,13 +457,6 @@ function edtm_process_pending_kit_sync() {
 }
 
 /* ========== Handle form submission ========== */
-/**
- * Handle Save Tokens form submission.
- *
- * Validates capability and nonce, sanitizes input, and updates options and Elementor Site Settings.
- *
- * @return void
- */
 function edtm_handle_save_tokens() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( esc_html__( 'You do not have permission to perform this action.', 'design-tokens-manager-for-elementor' ) );
@@ -770,13 +474,8 @@ function edtm_handle_save_tokens() {
 			$id    = isset( $row['id'] ) ? sanitize_text_field( $row['id'] ) : '';
 			$title = isset( $row['token'] ) ? sanitize_text_field( $row['token'] ) : '';
 			$hex   = isset( $row['color'] ) ? sanitize_hex_color( $row['color'] ) : '';
-			if ( '' === $title || '' === $hex ) {
-				continue; }
-			$colors_norm[]                             = array(
-				'id'    => $id,
-				'title' => $title,
-				'color' => $hex,
-			);
+			if ( '' === $title || '' === $hex ) { continue; }
+			$colors_norm[] = array( 'id' => $id, 'title' => $title, 'color' => $hex );
 			$have_color_titles[ strtolower( $title ) ] = true;
 		}
 	}
@@ -784,8 +483,7 @@ function edtm_handle_save_tokens() {
 		$bulk = edtm_parse_bulk_colors( $post['edtm_colors_bulk'] );
 		foreach ( $bulk as $c ) {
 			$key = strtolower( $c['title'] );
-			if ( isset( $have_color_titles[ $key ] ) ) {
-				continue; }
+			if ( isset( $have_color_titles[ $key ] ) ) { continue; }
 			$colors_norm[] = $c;
 		}
 	}
@@ -793,18 +491,16 @@ function edtm_handle_save_tokens() {
 	$have_font_titles = array();
 	if ( isset( $post['edtm_fonts'] ) && is_array( $post['edtm_fonts'] ) ) {
 		foreach ( $post['edtm_fonts'] as $row ) {
-			$id    = isset( $row['id'] ) ? sanitize_text_field( $row['id'] ) : '';
-			$title = isset( $row['token'] ) ? sanitize_text_field( $row['token'] ) : '';
-			if ( '' === $title ) {
-				continue; }
+			$id          = isset( $row['id'] ) ? sanitize_text_field( $row['id'] ) : '';
+			$title       = isset( $row['token'] ) ? sanitize_text_field( $row['token'] ) : '';
+			if ( '' === $title ) { continue; }
 			$family      = isset( $row['family'] ) ? edtm_sanitize_font_family( $row['family'] ) : '';
 			$size        = isset( $row['size'] ) ? edtm_sanitize_font_size( $row['size'] ) : '';
 			$weight      = isset( $row['weight'] ) ? absint( $row['weight'] ) : 0;
 			$line_height = isset( $row['line_height'] ) ? edtm_sanitize_line_height( $row['line_height'] ) : '';
-			if ( $weight && ( $weight < 100 || $weight > 1000 ) ) {
-				$weight = 400; }
+			if ( $weight && ( $weight < 100 || $weight > 1000 ) ) { $weight = 400; }
 
-			$fonts_norm[]                             = array(
+			$fonts_norm[] = array(
 				'id'          => $id,
 				'title'       => $title,
 				'family'      => $family,
@@ -819,15 +515,13 @@ function edtm_handle_save_tokens() {
 		$bulk = edtm_parse_bulk_fonts( $post['edtm_fonts_bulk'] );
 		foreach ( $bulk as $f ) {
 			$key = strtolower( $f['title'] );
-			if ( isset( $have_font_titles[ $key ] ) ) {
-				continue; }
+			if ( isset( $have_font_titles[ $key ] ) ) { continue; }
 			$fonts_norm[] = $f;
 		}
 	}
 
 	$colors_option = array();
-	foreach ( $colors_norm as $c ) {
-		$colors_option[ $c['title'] ] = $c['color']; }
+	foreach ( $colors_norm as $c ) { $colors_option[ $c['title'] ] = $c['color']; }
 	$fonts_option = array();
 	foreach ( $fonts_norm as $f ) {
 		$fonts_option[ $f['title'] ] = array(
@@ -842,10 +536,10 @@ function edtm_handle_save_tokens() {
 
 	$kit_status = edtm_apply_kit_settings_from_normalized( $colors_norm, $fonts_norm );
 
-	// Determine current section robustly: Referer query -> POST -> user meta -> default.
+	// Determine current section robustly: Referer query -> POST -> user meta -> default
 	$current_section = 'fonts';
 
-	// 1) Prefer the edtm_section value from the referer URL when available (reflects visible page state).
+	// 1) Prefer the edtm_section value from the referer URL when available (reflects visible page state)
 	if ( ! empty( $_SERVER['HTTP_REFERER'] ) ) {
 		$referer = wp_sanitize_redirect( wp_unslash( $_SERVER['HTTP_REFERER'] ) );
 		if ( $referer ) {
@@ -861,14 +555,14 @@ function edtm_handle_save_tokens() {
 		}
 	}
 
-	// 2) If referer didn't yield a valid section, fall back to posted hidden input.
+	// 2) If referer didn't yield a valid section, fall back to posted hidden input
 	if ( empty( $current_section ) || ! in_array( $current_section, array( 'colors', 'fonts' ), true ) ) {
 		if ( isset( $post['edtm_current_section'] ) && in_array( sanitize_key( $post['edtm_current_section'] ), array( 'colors', 'fonts' ), true ) ) {
 			$current_section = sanitize_key( $post['edtm_current_section'] );
 		}
 	}
 
-	// 3) Final fallback: last saved user preference.
+	// 3) Final fallback: last saved user preference
 	if ( empty( $current_section ) || ! in_array( $current_section, array( 'colors', 'fonts' ), true ) ) {
 		$user_id = get_current_user_id();
 		if ( $user_id ) {
@@ -879,7 +573,7 @@ function edtm_handle_save_tokens() {
 		}
 	}
 
-	// Persist user's preference server-side so redirects/load will honor it.
+	// Persist user's preference server-side so redirects/load will honor it
 	$user_id = get_current_user_id();
 	if ( $user_id ) {
 		update_user_meta( $user_id, 'edtm_last_active_section', $current_section );
@@ -891,8 +585,7 @@ function edtm_handle_save_tokens() {
 		'edtm_section'     => $current_section,
 		'edtm_view'        => 'manage',
 	);
-	if ( 'queued' === $kit_status ) {
-		$args['kit-queued'] = 1; }
+	if ( 'queued' === $kit_status ) { $args['kit-queued'] = 1; }
 
 	wp_safe_redirect( edtm_get_admin_page_url( $args ) );
 	exit;

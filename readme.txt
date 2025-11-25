@@ -1,5 +1,5 @@
 === Design Tokens Manager for Elementor ===
-Contributors: nes07, lupudanielgabriel
+Contributors: lupudanielgabriel
 Tags: elementor, design, tokens, colors, typography
 Requires at least: 5.6
 Tested up to: 6.8

@@ -1,15 +1,12 @@
 <?php
 /**
  * Admin settings page: Design Tokens (compact UI + view switcher + tabs + bulk delete).
- *
- * @package Design_Tokens_Manager_For_Elementor
  */
-
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Determine active section order: GET param -> POST form value -> per-user preference -> default.
+// Determine active section order: GET param -> POST form value -> per-user preference -> default
 $edtm_current_section = '';
 
 /**
@@ -22,57 +19,44 @@ $edtm_current_section = '';
 $edtm_raw_section = '';
 // phpcs:disable WordPress.Security.NonceVerification
 if ( isset( $_GET['edtm_section'] ) ) {
-	$edtm_raw_section = sanitize_text_field( wp_unslash( $_GET['edtm_section'] ) );
+    $edtm_raw_section = sanitize_text_field( wp_unslash( $_GET['edtm_section'] ) );
 } elseif ( isset( $_POST['edtm_current_section'] ) ) {
-	$edtm_raw_section = sanitize_text_field( wp_unslash( $_POST['edtm_current_section'] ) );
+    $edtm_raw_section = sanitize_text_field( wp_unslash( $_POST['edtm_current_section'] ) );
 }
 // phpcs:enable
 
 if ( in_array( $edtm_raw_section, array( 'colors', 'fonts' ), true ) ) {
-	$edtm_current_section = $edtm_raw_section;
+    $edtm_current_section = $edtm_raw_section;
 } else {
-	// Try user preference if GET/POST wasn't valid.
-	$edtm_user_id = get_current_user_id();
-	if ( $edtm_user_id ) {
-		$edtm_pref = get_user_meta( $edtm_user_id, 'edtm_last_active_section', true );
-		if ( in_array( $edtm_pref, array( 'colors', 'fonts' ), true ) ) {
-			$edtm_current_section = $edtm_pref;
-		}
-	}
-	// Final fallback to fonts if nothing else was valid.
-	if ( ! in_array( $edtm_current_section, array( 'colors', 'fonts' ), true ) ) {
-		$edtm_current_section = 'fonts';
-	}
+    // Try user preference if GET/POST wasn't valid
+    $edtm_user_id = get_current_user_id();
+    if ( $edtm_user_id ) {
+        $edtm_pref = get_user_meta( $edtm_user_id, 'edtm_last_active_section', true );
+        if ( in_array( $edtm_pref, array( 'colors', 'fonts' ), true ) ) {
+            $edtm_current_section = $edtm_pref;
+        }
+    }
+    // Final fallback to fonts if nothing else was valid
+    if ( ! in_array( $edtm_current_section, array( 'colors', 'fonts' ), true ) ) {
+        $edtm_current_section = 'fonts';
+    }
 }
 
 $edtm_color_options = get_option( 'elementor_scheme_color', array() );
-if ( ! is_array( $edtm_color_options ) ) {
-	$edtm_color_options = array(); }
+if ( ! is_array( $edtm_color_options ) ) { $edtm_color_options = array(); }
 
 $edtm_font_options = get_option( 'elementor_scheme_typography', array() );
-if ( ! is_array( $edtm_font_options ) ) {
-	$edtm_font_options = array(); }
+if ( ! is_array( $edtm_font_options ) ) { $edtm_font_options = array(); }
 
-// Pending snapshot so UI reflects deletes immediately (if queued).
+// Pending snapshot so UI reflects deletes immediately (if queued)
 $edtm_pending      = get_option( 'edtm_pending_kit_sync' );
 $edtm_pending_cols = ( is_array( $edtm_pending ) && isset( $edtm_pending['colors_norm'] ) && is_array( $edtm_pending['colors_norm'] ) ) ? $edtm_pending['colors_norm'] : array();
 $edtm_pending_fnts = ( is_array( $edtm_pending ) && isset( $edtm_pending['fonts_norm'] ) && is_array( $edtm_pending['fonts_norm'] ) ) ? $edtm_pending['fonts_norm'] : array();
 
-/**
- * Get active Elementor kit object if available.
- *
- * @return mixed Elementor kit object or false.
- */
 function edtm_page_get_active_kit() {
-	if ( function_exists( 'edtm_get_active_kit' ) ) {
-		return edtm_get_active_kit(); }
+	if ( function_exists( 'edtm_get_active_kit' ) ) { return edtm_get_active_kit(); }
 	return false;
 }
-/**
- * Get kit meta array when direct kit object is not accessible.
- *
- * @return array Kit settings meta.
- */
 function edtm_page_get_kit_meta() {
 	if ( function_exists( 'edtm_get_active_kit_id' ) && function_exists( 'edtm_get_kit_settings_meta' ) ) {
 		$kit_id = edtm_get_active_kit_id();
@@ -83,45 +67,31 @@ function edtm_page_get_kit_meta() {
 /**
  * Extract size string from an item (prefer custom clamp).
  */
-/**
- * Extract size string from a kit item (prefer custom clamp when available).
- *
- * @param array  $item   Kit item array.
- * @param string $prefix Elementor prefix for typography keys.
- * @return string Size string (clamp(...) or numeric unit) or empty string.
- */
 function edtm_get_size_string_from_item( $item, $prefix ) {
-	if ( ! is_array( $item ) ) {
-		return ''; }
-	// Any *_font_size_custom key first (covers clamp display).
+	if ( ! is_array( $item ) ) { return ''; }
+	// Any *_font_size_custom key first (covers clamp display)
 	foreach ( array_keys( $item ) as $k ) {
 		if ( preg_match( '/_font_size_custom$/', $k ) && is_string( $item[ $k ] ) && '' !== trim( $item[ $k ] ) ) {
 			return trim( $item[ $k ] );
 		}
 	}
-	// Fallback: if unit=custom and size is string, use it.
+	// Fallback: if unit=custom and size is string, use it
 	if ( isset( $item[ $prefix . '_font_size' ] ) && is_array( $item[ $prefix . '_font_size' ] ) ) {
 		$dim = $item[ $prefix . '_font_size' ];
 		if ( isset( $dim['unit'] ) && 'custom' === $dim['unit'] && isset( $dim['size'] ) && is_string( $dim['size'] ) && '' !== trim( $dim['size'] ) ) {
 			return trim( $dim['size'] );
 		}
 		if ( function_exists( 'edtm_dimension_to_string' ) ) {
-			$str = edtm_dimension_to_string( $dim );
-			if ( $str ) {
-				return $str;
-			}
+			$str = edtm_dimension_to_string( $dim ); if ( $str ) return $str;
 		}
 	}
-	if ( isset( $item['typography_font_size'] ) && is_array( $item['typography_font_size'] ) ) {
-		$dim = $item['typography_font_size'];
+	if ( isset( $item['typography_font_size' ] ) && is_array( $item['typography_font_size' ] ) ) {
+		$dim = $item['typography_font_size' ];
 		if ( isset( $dim['unit'] ) && 'custom' === $dim['unit'] && isset( $dim['size'] ) && is_string( $dim['size'] ) && '' !== trim( $dim['size'] ) ) {
 			return trim( $dim['size'] );
 		}
 		if ( function_exists( 'edtm_dimension_to_string' ) ) {
-			$str = edtm_dimension_to_string( $dim );
-			if ( $str ) {
-				return $str;
-			}
+			$str = edtm_dimension_to_string( $dim ); if ( $str ) return $str;
 		}
 	}
 	return '';
@@ -133,20 +103,10 @@ $edtm_kit_fonts   = array();
 $edtm_typo_prefix = 'typography_typo';
 
 if ( $edtm_kit && method_exists( $edtm_kit, 'get_settings' ) ) {
-	try {
-		$edtm_kit_colors = $edtm_kit->get_settings( 'custom_colors' );
-	} catch ( \Throwable $e ) {
-		// Intentionally ignored: Elementor may not be loaded; fall back to meta.
-		$edtm_kit_colors = is_array( $edtm_kit_colors ) ? $edtm_kit_colors : array();
-	}
-	try {
-		$edtm_kit_fonts = $edtm_kit->get_settings( 'custom_typography' );
-	} catch ( \Throwable $e ) {
-		// Intentionally ignored: Elementor may not be loaded; fall back to meta.
-		$edtm_kit_fonts = is_array( $edtm_kit_fonts ) ? $edtm_kit_fonts : array();
-	}
-
-	$edtm_meta       = edtm_page_get_kit_meta();
+	try { $edtm_kit_colors = $edtm_kit->get_settings( 'custom_colors' ); } catch ( \Throwable $e ) {}
+	try { $edtm_kit_fonts  = $edtm_kit->get_settings( 'custom_typography' ); } catch ( \Throwable $e ) {}
+} else {
+	$edtm_meta = edtm_page_get_kit_meta();
 	$edtm_kit_colors = isset( $edtm_meta['custom_colors'] ) && is_array( $edtm_meta['custom_colors'] ) ? $edtm_meta['custom_colors'] : array();
 	$edtm_kit_fonts  = isset( $edtm_meta['custom_typography'] ) && is_array( $edtm_meta['custom_typography'] ) ? $edtm_meta['custom_typography'] : array();
 }
@@ -154,7 +114,7 @@ if ( function_exists( 'edtm_detect_typo_prefix' ) ) {
 	$edtm_typo_prefix = edtm_detect_typo_prefix( $edtm_kit_fonts );
 }
 
-// Build rows from Kit overlaid with plugin options, unless pending snapshot exists.
+// Build rows from Kit overlaid with plugin options, unless pending snapshot exists
 if ( ! empty( $edtm_pending_cols ) || ! empty( $edtm_pending_fnts ) ) {
 	$edtm_rows_colors = array();
 	foreach ( $edtm_pending_cols as $edtm_c ) {
@@ -178,45 +138,29 @@ if ( ! empty( $edtm_pending_cols ) || ! empty( $edtm_pending_fnts ) ) {
 } else {
 	$edtm_rows_colors = array();
 	foreach ( (array) $edtm_kit_colors as $edtm_item ) {
-		if ( ! is_array( $edtm_item ) ) {
-			continue;
-		}
+		if ( ! is_array( $edtm_item ) ) continue;
 		$edtm_id    = isset( $edtm_item['_id'] ) ? $edtm_item['_id'] : '';
 		$edtm_title = isset( $edtm_item['title'] ) ? $edtm_item['title'] : '';
 		$edtm_hex   = isset( $edtm_item['color'] ) ? $edtm_item['color'] : '';
-		if ( '' === $edtm_title ) {
-			continue;
-		}
-		$edtm_rows_colors[ strtolower( $edtm_title ) ] = array(
-			'id'    => $edtm_id,
-			'title' => $edtm_title,
-			'color' => $edtm_hex,
-		);
+		if ( '' === $edtm_title ) continue;
+		$edtm_rows_colors[ strtolower( $edtm_title ) ] = array( 'id' => $edtm_id, 'title' => $edtm_title, 'color' => $edtm_hex );
 	}
 	foreach ( (array) $edtm_color_options as $edtm_title => $edtm_hex ) {
 		$edtm_key = strtolower( $edtm_title );
 		if ( isset( $edtm_rows_colors[ $edtm_key ] ) ) {
 			$edtm_rows_colors[ $edtm_key ]['color'] = $edtm_hex;
 		} else {
-			$edtm_rows_colors[ $edtm_key ] = array(
-				'id'    => '',
-				'title' => $edtm_title,
-				'color' => $edtm_hex,
-			);
+			$edtm_rows_colors[ $edtm_key ] = array( 'id' => '', 'title' => $edtm_title, 'color' => $edtm_hex );
 		}
 	}
 	$edtm_rows_colors = array_values( $edtm_rows_colors );
 
 	$edtm_rows_fonts = array();
 	foreach ( (array) $edtm_kit_fonts as $edtm_item ) {
-		if ( ! is_array( $edtm_item ) ) {
-			continue;
-		}
+		if ( ! is_array( $edtm_item ) ) continue;
 		$edtm_id    = isset( $edtm_item['_id'] ) ? $edtm_item['_id'] : '';
 		$edtm_title = isset( $edtm_item['title'] ) ? $edtm_item['title'] : '';
-		if ( '' === $edtm_title ) {
-			continue;
-		}
+		if ( '' === $edtm_title ) continue;
 
 		$edtm_family = isset( $edtm_item[ $edtm_typo_prefix . '_font_family' ] ) ? $edtm_item[ $edtm_typo_prefix . '_font_family' ] : ( isset( $edtm_item['typography_font_family'] ) ? $edtm_item['typography_font_family'] : '' );
 		$edtm_size_s = edtm_get_size_string_from_item( $edtm_item, $edtm_typo_prefix );
@@ -240,18 +184,10 @@ if ( ! empty( $edtm_pending_cols ) || ! empty( $edtm_pending_fnts ) ) {
 		$edtm_key   = strtolower( $edtm_title );
 		$edtm_props = is_array( $edtm_props ) ? $edtm_props : array();
 		if ( isset( $edtm_rows_fonts[ $edtm_key ] ) ) {
-			if ( isset( $edtm_props['family'] ) && '' !== $edtm_props['family'] ) {
-				$edtm_rows_fonts[ $edtm_key ]['family'] = $edtm_props['family'];
-			}
-			if ( isset( $edtm_props['size'] ) && '' !== $edtm_props['size'] ) {
-				$edtm_rows_fonts[ $edtm_key ]['size'] = $edtm_props['size'];
-			}
-			if ( isset( $edtm_props['weight'] ) && '' !== $edtm_props['weight'] ) {
-				$edtm_rows_fonts[ $edtm_key ]['weight'] = $edtm_props['weight'];
-			}
-			if ( isset( $edtm_props['line_height'] ) && '' !== $edtm_props['line_height'] ) {
-				$edtm_rows_fonts[ $edtm_key ]['line_height'] = $edtm_props['line_height'];
-			}
+			if ( isset( $edtm_props['family'] ) && '' !== $edtm_props['family'] )         $edtm_rows_fonts[ $edtm_key ]['family']      = $edtm_props['family'];
+			if ( isset( $edtm_props['size'] ) && '' !== $edtm_props['size'] )             $edtm_rows_fonts[ $edtm_key ]['size']        = $edtm_props['size'];
+			if ( isset( $edtm_props['weight'] ) && '' !== $edtm_props['weight'] )         $edtm_rows_fonts[ $edtm_key ]['weight']      = $edtm_props['weight'];
+			if ( isset( $edtm_props['line_height'] ) && '' !== $edtm_props['line_height'] ) $edtm_rows_fonts[ $edtm_key ]['line_height'] = $edtm_props['line_height'];
 		} else {
 			$edtm_rows_fonts[ $edtm_key ] = array(
 				'id'          => '',
@@ -270,6 +206,17 @@ $edtm_colors_count = count( $edtm_rows_colors );
 $edtm_fonts_count  = count( $edtm_rows_fonts );
 ?>
 <div class="wrap edtm-wrap">
+	<!-- Inline CSS to prevent flash of wrong section -->
+	<style>
+		/* Hide sections by default, show active one */
+		.edtm-panel[data-section] { display: none; }
+		<?php if ($edtm_current_section === 'colors'): ?>
+		.edtm-panel[data-section="colors"] { display: block; }
+		<?php else: ?>
+		.edtm-panel[data-section="fonts"] { display: block; }
+		<?php endif; ?>
+	</style>
+	
 
 	<h1 class="edtm-title"><?php esc_html_e( 'Design Tokens', 'design-tokens-manager-for-elementor' ); ?></h1>
 
@@ -348,10 +295,8 @@ $edtm_fonts_count  = count( $edtm_rows_fonts );
 					</tr>
 				</thead>
 				<tbody>
-					<?php
-					if ( $edtm_fonts_count ) :
-						foreach ( $edtm_rows_fonts as $edtm_j => $edtm_row ) :
-							?>
+					<?php if ( $edtm_fonts_count ) :
+						foreach ( $edtm_rows_fonts as $edtm_j => $edtm_row ) : ?>
 							<tr class="edtm-row" data-index="<?php echo esc_attr( $edtm_j ); ?>">
 								<th class="check-column"><input type="checkbox" class="edtm-row-check" /></th>
 								<td>
@@ -417,10 +362,8 @@ $edtm_fonts_count  = count( $edtm_rows_fonts );
 					</tr>
 				</thead>
 				<tbody>
-					<?php
-					if ( $edtm_colors_count ) :
-						foreach ( $edtm_rows_colors as $edtm_i => $edtm_row ) :
-							?>
+					<?php if ( $edtm_colors_count ) :
+						foreach ( $edtm_rows_colors as $edtm_i => $edtm_row ) : ?>
 							<tr class="edtm-row" data-index="<?php echo esc_attr( $edtm_i ); ?>">
 								<th class="check-column"><input type="checkbox" class="edtm-row-check" /></th>
 								<td>
