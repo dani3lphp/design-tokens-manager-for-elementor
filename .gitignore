@@ -16,6 +16,22 @@ Thumbs.db
 tmp_rovodev_*
 prompt.txt
 
+# SVN and deployment files
+svn/
+svnpass.txt
+*SVN*.md
+*SVN*.txt
+*DEPLOY*.txt
+*DEPLOY*.md
+FINAL-*.txt
+FINAL-*.md
+EXECUTE-*.txt
+QUICK-*.txt
+READY-*.txt
+START-HERE.md
+INSTALL-SVN.txt
+FIX-AND-DEPLOY.txt
+
 # IDE
 .vscode/
 .idea/

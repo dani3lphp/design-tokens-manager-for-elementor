@@ -1,5 +1,5 @@
 === Design Tokens Manager for Elementor ===
-Contributors: lupudanielgabriel
+Contributors: nes07
 Tags: elementor, design, tokens, colors, typography
 Requires at least: 5.6
 Tested up to: 6.8
@@ -51,7 +51,7 @@ Body: Roboto, 1 rem, 400, 1.5em`
 
 1. Upload to `/wp-content/plugins/` or install via dashboard
 2. Activate the plugin
-3. Go to **Elementor → Design Tokens**
+3. Go to **Elementor → Templates → Design Tokens** (in WordPress admin sidebar)
 4. Add tokens and click **Save Tokens**
 
 == Frequently Asked Questions ==
@@ -115,7 +115,7 @@ First stable release. Safe to use in production.
 wp edtm import tokens.json --mode=merge
 wp edtm sync`
 
-**GitHub:** https://github.com/yourusername/design-tokens-manager-for-elementor
+**GitHub:** https://github.com/dani3lphp/design-tokens-manager-for-elementor.git
 
 == Support ==
 
@@ -123,4 +123,4 @@ For bug reports and feature requests, please use the WordPress.org support forum
 
 == Credits ==
 
-Developed by Lupu Daniel Gabriel
+Developed by nes07

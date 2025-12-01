@@ -1,432 +1,212 @@
-# Design Tokens Manager for Elementor
+# 🎨 Design Tokens Manager for Elementor
 
-[![WordPress Plugin Version](https://img.shields.io/wordpress/plugin/v/design-tokens-manager-for-elementor)](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
-[![WordPress Plugin Required PHP Version](https://img.shields.io/wordpress/plugin/required-php/design-tokens-manager-for-elementor)](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
-[![WordPress Plugin Rating](https://img.shields.io/wordpress/plugin/rating/design-tokens-manager-for-elementor)](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
-[![WordPress Plugin Downloads](https://img.shields.io/wordpress/plugin/dt/design-tokens-manager-for-elementor)](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
-[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+**Manage your Elementor design system like a pro!** Bulk edit colors and fonts, use fluid typography with `clamp()`, and keep your design tokens in perfect sync.
 
-> Take full control of your Elementor design system. Effortlessly manage Global Colors and Fonts with perfect ID consistency, smart `clamp()` sizing support, and real-time sync to Site Settings.
-
----
-
-## 📖 Table of Contents
-
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [Installation](#-installation)
-- [Quick Start Guide](#-quick-start-guide)
-- [Usage Examples](#-usage-examples)
-- [Advanced Features](#-advanced-features)
-- [WP-CLI Commands](#-wp-cli-commands)
-- [Import/Export](#-importexport)
-- [Requirements](#-requirements)
-- [Troubleshooting](#-troubleshooting)
-- [Contributing](#-contributing)
-- [Support](#-support)
-- [License](#-license)
+[![WordPress Plugin Version](https://img.shields.io/wordpress/plugin/v/design-tokens-manager-for-elementor.svg)](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
+[![WordPress Plugin Downloads](https://img.shields.io/wordpress/plugin/dt/design-tokens-manager-for-elementor.svg)](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
+[![WordPress Plugin Rating](https://img.shields.io/wordpress/plugin/rating/design-tokens-manager-for-elementor.svg)](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
+[![License](https://img.shields.io/badge/license-GPL--2.0%2B-blue.svg)](LICENSE)
 
 ---
 
-## 🎯 Overview
+## 🚀 What Does This Plugin Do?
 
-Design Tokens Manager for Elementor is a powerful WordPress plugin that streamlines the management of Elementor's Global Colors and Typography. Whether you're maintaining a design system, working with multiple brands, or simply want better control over your site's visual tokens, this plugin provides the tools you need.
+If you use Elementor and want to manage your colors and fonts more efficiently, this plugin is for you! Instead of clicking through dozens of menus, you can:
 
-### Why Use This Plugin?
-
-- ✅ **Bulk Operations**: Add dozens of colors or fonts at once instead of one-by-one
-- ✅ **Fluid Typography**: Full support for CSS `clamp()` functions for responsive sizing
-- ✅ **ID Preservation**: Maintains token IDs across sync operations to prevent broken references
-- ✅ **Two-Way Sync**: Pull tokens from Elementor or push your managed tokens back
-- ✅ **Import/Export**: Backup, share, or migrate your design tokens as JSON
-- ✅ **Developer Tools**: WP-CLI commands for automation and CI/CD workflows
+- **Paste multiple colors at once** - Add 10 colors in seconds, not minutes
+- **Bulk edit fonts** - Update all your typography in one go
+- **Use responsive font sizes** - Support for modern CSS `clamp()` function
+- **Sync with Elementor** - Two-way sync between your tokens and Elementor's Site Settings
+- **Export/Import** - Backup your design system or move it between sites
+- **Automate with WP-CLI** - Perfect for developers and agencies
 
 ---
 
-## 🌟 Key Features
+## ✨ Key Features
 
-### 🎨 **Comprehensive Color Management**
-- Visual color picker with hex code display
-- Bulk paste: `TokenName: #HexCode` format
-- Real-time color preview swatches
-- Automatic hex validation and sanitization
+### 🎯 Bulk Editing
+Stop clicking one color at a time! Paste multiple tokens in this simple format:
+```
+Primary: #FF5733
+Secondary: #00A8E8
+Accent: #FFC300
+```
 
-### 🔤 **Advanced Typography Control**
-- Font family with fallback stacks support
-- Font size with `px`, `rem`, `em`, or `clamp()` values
-- Font weight (100-900)
-- Line height in `em` units
-- Bulk paste: `Name: Family, Size, Weight, LineHeight`
+### 📱 Fluid Typography
+Use modern responsive font sizes with `clamp()`:
+```
+Heading: Inter, clamp(3rem, 2.5rem + 2vw, 4rem), 700, 1.2em
+Body: Roboto, 1rem, 400, 1.5em
+```
 
-### 🔄 **Smart Synchronization**
-- **Pull from Elementor**: Import existing tokens from Site Settings
-- **Push to Elementor**: Apply your managed tokens to Site Settings
-- ID-aware merging prevents duplicates
-- Queue-based processing for reliability
-- Preserves unknown Elementor properties
+### 🔄 Two-Way Sync
+- **Pull**: Import existing colors/fonts from Elementor Site Settings
+- **Push**: Send your tokens to Elementor Site Settings
+- Changes sync automatically!
 
-### 📦 **Import/Export System**
-- Export to JSON format (all tokens or current section)
-- Import with merge or replace modes
-- ID preservation option for consistent references
-- 2MB file size limit for security
-- Automatic validation of JSON structure
+### 💾 Import/Export
+- Export your design tokens as JSON
+- Import tokens with or without ID preservation
+- Perfect for backing up or migrating sites
 
-### 👨‍💻 **Developer Features**
-- WP-CLI integration for automation
-- Direct Kit meta access for edge cases
-- Clean, documented, WordPress-standard code
-- Hooks and filters for extensibility
-
-### 💡 **User Experience**
-- Tab persistence across page loads and form submissions
-- Intuitive table-based interface
-- Bulk actions (select all, delete selected)
-- Inline editing with instant validation
-- Section-based organization (Colors/Fonts)
+### ⌨️ WP-CLI Support
+Automate your workflow:
+```bash
+wp edtm export --file=tokens.json
+wp edtm import tokens.json --mode=merge
+wp edtm sync
+```
 
 ---
 
-## 🚀 Installation
+## 📦 Installation
 
-### Method 1: WordPress Admin (Recommended)
+### From WordPress.org (Recommended)
 
-1. Log in to your WordPress admin dashboard
-2. Navigate to **Plugins → Add New**
-3. Search for "Design Tokens Manager for Elementor"
-4. Click **Install Now**, then **Activate**
-5. Access via **Elementor → Design Tokens** in the admin menu
+1. Go to **Plugins → Add New** in your WordPress admin
+2. Search for **"Design Tokens Manager for Elementor"**
+3. Click **Install Now**, then **Activate**
+4. Done! 🎉
 
-### Method 2: Manual Upload
+### Manual Installation
 
-1. Download the plugin ZIP file from [WordPress.org](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
-2. Go to **Plugins → Add New → Upload Plugin**
-3. Choose the ZIP file and click **Install Now**
-4. Click **Activate Plugin**
-
-### Method 3: FTP Upload
-
-1. Download and extract the plugin ZIP file
+1. Download the plugin from [WordPress.org](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
 2. Upload the `design-tokens-manager-for-elementor` folder to `/wp-content/plugins/`
 3. Activate the plugin through the **Plugins** menu in WordPress
 
+### Requirements
+
+- WordPress 5.6 or higher
+- Elementor (Free or Pro) - must be installed and activated
+- PHP 7.0 or higher
+
 ---
 
-## 🎓 Quick Start Guide
+## 🎓 How to Use
 
 ### Step 1: Access the Plugin
-Navigate to **Elementor → Design Tokens** in your WordPress admin menu.
 
-### Step 2: Choose Your Section
-- Click **Colors** or **Fonts** tabs to manage different token types
-- Your last viewed section is remembered automatically
+After activating the plugin, go to:
 
-### Step 3: Add Tokens
+**WordPress Admin → Elementor → Templates → Design Tokens**
 
-#### Option A: Add Individual Tokens
-1. Click **Add Row** button
-2. Fill in the token details:
-   - **Colors**: Token name and hex color
-   - **Fonts**: Token name, family, size, weight, line height
-3. Click **Save Tokens**
+(Look in the left sidebar under "Elementor", then click "Templates")
 
-#### Option B: Bulk Paste (Faster!)
-1. Prepare your tokens in a text editor:
+### Step 2: Add Your Design Tokens
+
+#### Adding Colors (Bulk Method)
+1. Click the **Colors** tab
+2. Paste your colors in this format:
    ```
    Primary: #FF5733
    Secondary: #00A8E8
-   Accent: #4CAF50
+   Accent: #FFC300
+   Background: #F5F5F5
    ```
-2. Paste into the **Bulk Paste** textarea
 3. Click **Save Tokens**
 
-### Step 4: Sync with Elementor
-1. Click the **Sync** tab
-2. Choose **Pull from Elementor** to import existing tokens
-3. Or choose **Push to Elementor** to apply your managed tokens
+#### Adding Fonts (Bulk Method)
+1. Click the **Fonts** tab
+2. Paste your fonts in this format:
+   ```
+   Heading: Inter, 3rem, 700, 1.2em
+   Body: Roboto, 1rem, 400, 1.5em
+   Small: Arial, 0.875rem, 400, 1.4em
+   ```
+3. Click **Save Tokens**
+
+#### Using Responsive Font Sizes
+You can use `clamp()` for fluid typography:
+```
+Hero: Inter, clamp(2rem, 1.5rem + 2vw, 4rem), 700, 1.1em
+```
+This creates fonts that scale smoothly between screen sizes!
+
+### Step 3: Sync with Elementor
+
+After saving your tokens:
+- **Pull from Elementor**: Import existing Site Settings
+- **Push to Elementor**: Send your tokens to Site Settings
+- Your tokens are now available throughout Elementor!
 
 ---
 
-## 📝 Usage Examples
+## 📖 Common Use Cases
 
-### Example 1: Adding Brand Colors
+### 🎨 For Designers
+Quickly create and manage your design system without clicking through multiple menus. Update all your brand colors in seconds.
 
-**Individual Entry:**
-1. Click **Add Row**
-2. Token: `Brand Primary`, Color: `#1E88E5`
-3. Click **Add Row** again
-4. Token: `Brand Secondary`, Color: `#FFC107`
-5. Click **Save Tokens**
+### 🏢 For Agencies
+Export design tokens from one site and import to another. Maintain consistent branding across multiple client sites.
 
-**Bulk Entry:**
-```
-Brand Primary: #1E88E5
-Brand Secondary: #FFC107
-Brand Accent: #4CAF50
-Brand Dark: #263238
-Brand Light: #ECEFF1
-```
+### 👨‍💻 For Developers
+Use WP-CLI commands to automate token management. Perfect for deployment scripts and version control.
 
-### Example 2: Responsive Typography with Clamp
-
-```
-Heading XL: Inter, clamp(2.5rem, 2rem + 2vw, 4rem), 700, 1.2em
-Heading L: Inter, clamp(2rem, 1.5rem + 1.5vw, 3rem), 700, 1.3em
-Heading M: Inter, clamp(1.5rem, 1.25rem + 1vw, 2rem), 600, 1.3em
-Body: Roboto, 1rem, 400, 1.6em
-Small: Roboto, 0.875rem, 400, 1.5em
-```
-
-### Example 3: Font Stacks with Fallbacks
-
-```
-Heading Font: "Playfair Display", Georgia, serif, 2rem, 700, 1.2em
-Body Font: "Open Sans", -apple-system, BlinkMacSystemFont, sans-serif, 1rem, 400, 1.6em
-Mono Font: "Fira Code", Consolas, Monaco, monospace, 0.9rem, 400, 1.4em
-```
-
-### Example 4: System Font Stack
-
-```
-System UI: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif, 1rem, 400, 1.5em
-```
+### 🎓 For Beginners
+Simple interface - just paste your colors and fonts! No technical knowledge required.
 
 ---
 
 ## 🔧 Advanced Features
 
-### Fluid Typography with clamp()
+### Import/Export Options
 
-The plugin fully supports CSS `clamp()` function for fluid, responsive typography:
+**Export your tokens:**
+1. Click **Import/Export** tab
+2. Choose source: Plugin or Elementor Kit
+3. Enable "Preserve IDs" if moving between sites
+4. Click **Export** and download JSON
 
-```css
-clamp(minimum, preferred, maximum)
-```
+**Import tokens:**
+1. Click **Import/Export** tab
+2. Choose your JSON file
+3. Select mode:
+   - **Merge**: Add new tokens, keep existing
+   - **Replace**: Replace all tokens
+4. Click **Import**
 
-**Example:**
-```
-Hero Title: Inter, clamp(3rem, 2.5rem + 2vw, 5rem), 900, 1.1em
-```
+### WP-CLI Commands
 
-This creates a font size that:
-- Never goes below `3rem`
-- Scales fluidly based on viewport width (`2.5rem + 2vw`)
-- Never exceeds `5rem`
-
-### Token ID Preservation
-
-The plugin intelligently manages token IDs to maintain consistency:
-
-- **First Save**: Generates new unique IDs
-- **Subsequent Saves**: Preserves existing IDs
-- **Pull from Elementor**: Imports IDs from Site Settings
-- **Push to Elementor**: Matches by name, preserves existing IDs
-
-This prevents broken references in your Elementor designs.
-
-### Merge vs. Replace Modes
-
-**Merge Mode** (Default):
-- Combines imported tokens with existing ones
-- Updates matching tokens (by name)
-- Adds new tokens
-- Preserves IDs when possible
-
-**Replace Mode**:
-- Clears existing tokens in the section
-- Imports only the new tokens
-- Useful for complete design system overhauls
-
-### Queue-Based Sync
-
-If the plugin can't immediately sync with Elementor (due to loading order), it queues the operation:
-
-1. Tokens are saved to WordPress options
-2. Operation is queued for processing
-3. Sync happens on next admin page load
-4. You're notified when sync completes
-
----
-
-## ⚡ WP-CLI Commands
-
-Automate token management from the command line:
-
-### Export Tokens
+Perfect for developers and automation:
 
 ```bash
-# Export all tokens (colors and fonts)
-wp elementor-tokens export
+# Export tokens
+wp edtm export --file=tokens.json --source=kit --preserve-ids
 
-# Export specific section
-wp elementor-tokens export --source=colors
-wp elementor-tokens export --source=fonts
+# Import tokens
+wp edtm import tokens.json --mode=merge
 
-# Export with custom filename
-wp elementor-tokens export --output=my-tokens.json
-
-# Export to stdout (pipe to other commands)
-wp elementor-tokens export --stdout
-```
-
-### Import Tokens
-
-```bash
-# Import from file (merge mode)
-wp elementor-tokens import tokens.json
-
-# Import with replace mode
-wp elementor-tokens import tokens.json --mode=replace
-
-# Import preserving IDs
-wp elementor-tokens import tokens.json --preserve-ids
-
-# Import from URL
-wp elementor-tokens import https://example.com/tokens.json
-```
-
-### Sync Operations
-
-```bash
-# Push local tokens to Elementor Site Settings
-wp elementor-tokens sync --direction=push
-
-# Pull tokens from Elementor Site Settings
-wp elementor-tokens sync --direction=pull
-```
-
-### Automation Examples
-
-**Daily Backup:**
-```bash
-#!/bin/bash
-DATE=$(date +%Y-%m-%d)
-wp elementor-tokens export --output="backups/tokens-$DATE.json"
-```
-
-**CI/CD Deployment:**
-```bash
-# After deployment, import design tokens
-wp elementor-tokens import design-tokens.json --mode=replace
-wp elementor-tokens sync --direction=push
+# Sync with Elementor
+wp edtm sync
 ```
 
 ---
 
-## 📦 Import/Export
+## 💡 Tips & Tricks
 
-### Export Format
+### Best Practices
 
-Exported JSON structure:
-```json
-{
-  "colors": [
-    {
-      "id": "edtmcol_abc123",
-      "title": "Primary",
-      "color": "#1E88E5"
-    }
-  ],
-  "fonts": [
-    {
-      "id": "edtmtyp_xyz789",
-      "title": "Heading",
-      "family": "Inter",
-      "size": "2rem",
-      "weight": 700,
-      "line_height": "1.2em"
-    }
-  ]
-}
+1. **Use meaningful names**: Instead of "Color1", use "Primary" or "Brand"
+2. **Start with Pull**: Import existing Elementor colors before adding new ones
+3. **Export regularly**: Keep backups of your design system
+4. **Use clamp() wisely**: Great for headings, but fixed sizes work better for body text
+
+### Bulk Paste Format
+
+Colors can be in any of these formats:
+- `Primary: #FF5733` (hex with #)
+- `Secondary: FF5733` (hex without #)
+- `Accent: rgb(255, 87, 51)` (RGB)
+- `Background: rgba(255, 87, 51, 0.5)` (RGBA)
+
+Fonts format:
 ```
-
-### Import Options
-
-**Source Selection:**
-- **All**: Import both colors and fonts
-- **Colors Only**: Import only color tokens
-- **Fonts Only**: Import only typography tokens
-
-**Mode Selection:**
-- **Merge**: Combine with existing tokens
-- **Replace**: Clear section before importing
-
-**ID Preservation:**
-- **On**: Use IDs from import file (recommended for backups/migrations)
-- **Off**: Generate new IDs (useful for duplicating tokens)
-
-### Import Limits
-
-- Maximum file size: 2MB
-- Accepted format: JSON only
-- Automatic validation of structure
-
----
-
-## 🛠️ Requirements
-
-### Minimum Requirements
-- **WordPress**: 5.6 or higher
-- **PHP**: 7.0 or higher
-- **Elementor**: Any version (Free or Pro)
-
-### Recommended Environment
-- **WordPress**: 6.0+
-- **PHP**: 8.0+
-- **Elementor**: Latest version
-- **MySQL**: 5.7+ or MariaDB 10.3+
-
-### Browser Support
-- Chrome/Edge (last 2 versions)
-- Firefox (last 2 versions)
-- Safari (last 2 versions)
-
----
-
-## 🔍 Troubleshooting
-
-### Tokens Not Appearing in Elementor
-
-**Solution:**
-1. Go to **Sync** tab
-2. Click **Push to Elementor**
-3. Refresh the Elementor editor
-4. Clear Elementor cache: **Elementor → Tools → Regenerate CSS**
-
-### Import Fails
-
-**Common Causes:**
-- File too large (>2MB): Split into smaller files
-- Invalid JSON format: Validate at [jsonlint.com](https://jsonlint.com)
-- Wrong file type: Ensure `.json` extension
-
-### Section Not Persisting
-
-**Solution:**
-- Clear browser cache
-- Check if JavaScript errors exist (browser console)
-- Try a different browser
-- Disable conflicting plugins temporarily
-
-### Clamp() Not Working
-
-**Requirements:**
-- Browser must support CSS `clamp()` (all modern browsers do)
-- Elementor must be recent version
-- Try clearing Elementor cache
-
-### WP-CLI Not Found
-
-**Installation:**
-```bash
-# Install WP-CLI
-curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-chmod +x wp-cli.phar
-sudo mv wp-cli.phar /usr/local/bin/wp
-
-# Verify
-wp --info
+Name: FontFamily, Size, Weight, LineHeight
 ```
+- **Font Family**: Any font name (e.g., Inter, Roboto)
+- **Size**: Any CSS unit (px, rem, em) or clamp()
+- **Weight**: 100-900 or bold/normal
+- **Line Height**: Number or CSS unit
 
 ---
 
@@ -434,83 +214,65 @@ wp --info
 
 We welcome contributions! Here's how you can help:
 
-### Reporting Bugs
-
-1. Check [existing issues](https://github.com/dani3lphp/design-tokens-manager-for-elementor/issues)
-2. Create a new issue with:
-   - Clear description
-   - Steps to reproduce
-   - Expected vs actual behavior
-   - WordPress/PHP/Elementor versions
-   - Screenshots if applicable
-
-### Submitting Pull Requests
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Follow WordPress coding standards
-4. Test thoroughly
-5. Commit changes: `git commit -m 'Add amazing feature'`
-6. Push to branch: `git push origin feature/amazing-feature`
-7. Open a Pull Request
-
-### Coding Standards
-
-- Follow [WordPress Coding Standards](https://developer.wordpress.org/coding-standards/wordpress-coding-standards/)
-- Use meaningful variable and function names
-- Add inline comments for complex logic
-- Write DocBlocks for functions
-- Test with PHP 7.0+ and latest WordPress
+- **Report bugs**: [GitHub Issues](https://github.com/dani3lphp/design-tokens-manager-for-elementor/issues)
+- **Suggest features**: [GitHub Discussions](https://github.com/dani3lphp/design-tokens-manager-for-elementor/discussions)
+- **Submit pull requests**: Fork the repo and submit PRs
+- **Improve documentation**: Help us make this README even better!
 
 ### Development Setup
 
 ```bash
-# Clone repository
+# Clone the repository
 git clone https://github.com/dani3lphp/design-tokens-manager-for-elementor.git
 
-# Install development tools (optional)
-composer install
+# Install in WordPress plugins directory
+cd wp-content/plugins/
+ln -s /path/to/cloned/repo design-tokens-manager-for-elementor
 
-# Run PHPCS (if configured)
-phpcs --standard=WordPress .
-
-# Run PHP syntax check
-find . -name "*.php" -exec php -l {} \;
+# Make your changes and test!
 ```
 
 ---
 
-## 🆘 Support
+## 📝 Changelog
 
-### WordPress.org Support Forum
-For general questions and community support:
-- [Plugin Support Forum](https://wordpress.org/support/plugin/design-tokens-manager-for-elementor/)
+### Version 1.5.1 (Current)
+- **Fixed**: Tab persistence after save/pull/push operations
+- **Fixed**: Section preference save reliability
+- **Fixed**: WordPress coding standards compliance
+- **Enhanced**: Variable naming conventions
+- **Improved**: Security hardening for form handlers
+- **Improved**: Code documentation
 
-### GitHub Issues
-For bug reports and feature requests:
-- [GitHub Issues](https://github.com/dani3lphp/design-tokens-manager-for-elementor/issues)
+### Version 1.5.0
+- Initial public release
+- Bulk color/font paste with clamp() support
+- Two-way sync (Pull/Push)
+- Import/Export with ID preservation
+- Smart tab persistence after operations
+- Direct Kit meta fallback
+- Queue-based sync processing
+- WP-CLI commands
 
-### Before Requesting Support
-
-Please provide:
-- WordPress version
-- PHP version
-- Elementor version (Free/Pro)
-- Plugin version
-- Steps to reproduce the issue
-- Screenshots if applicable
-- Browser console errors (if any)
-
-### Response Time
-- Community support: 1-3 business days
-- Bug reports: 1-5 business days
-- Feature requests: Varies based on priority
+[View full changelog →](https://wordpress.org/plugins/design-tokens-manager-for-elementor/#developers)
 
 ---
 
-## 📜 License
+## 🐛 Bug Reports & Support
 
-This plugin is licensed under the **GNU General Public License v2 or later**.
+### Found a Bug?
+Please report it on [GitHub Issues](https://github.com/dani3lphp/design-tokens-manager-for-elementor/issues)
+
+### Need Help?
+- **WordPress.org Support**: [Support Forum](https://wordpress.org/support/plugin/design-tokens-manager-for-elementor/)
+- **Documentation**: This README and plugin page
+- **GitHub Discussions**: [Ask questions](https://github.com/dani3lphp/design-tokens-manager-for-elementor/discussions)
+
+---
+
+## 📄 License
+
+This plugin is licensed under the [GPL v2 or later](LICENSE).
 
 ```
 This program is free software; you can redistribute it and/or modify
@@ -524,60 +286,43 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 ```
 
-See [LICENSE](LICENSE) file for full details.
+---
+
+## 🌟 Show Your Support
+
+If you find this plugin helpful, please:
+
+- ⭐ Star this repository on GitHub
+- ⭐ Rate it on [WordPress.org](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
+- 📢 Share it with other Elementor users
+- 💬 Leave a review
 
 ---
 
-## 🙏 Acknowledgments
+## 👨‍💻 Author
 
-- Built with ❤️ for the Elementor community
-- Inspired by design token standards and modern design systems
-- Thanks to all contributors, testers, and users
-- Special thanks to the WordPress and Elementor teams
+**Lupu Daniel Gabriel**
 
----
-
-## 📊 Project Stats
-
-- **Version**: 1.5.1
-- **Active Installations**: Check [WordPress.org](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
-- **Rating**: Check [WordPress.org](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
-- **Last Updated**: 2024
+- WordPress.org: [@nes07](https://profiles.wordpress.org/nes07/)
+- GitHub: [@dani3lphp](https://github.com/dani3lphp)
 
 ---
 
 ## 🔗 Links
 
-- [WordPress.org Plugin Page](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
-- [GitHub Repository](https://github.com/dani3lphp/design-tokens-manager-for-elementor)
-- [Report Issues](https://github.com/dani3lphp/design-tokens-manager-for-elementor/issues)
-- [Author: Daniel Gabriel Lupu](https://github.com/dani3lphp)
+- **Plugin Homepage**: [WordPress.org](https://wordpress.org/plugins/design-tokens-manager-for-elementor/)
+- **GitHub Repository**: [Source Code](https://github.com/dani3lphp/design-tokens-manager-for-elementor)
+- **Report Issues**: [GitHub Issues](https://github.com/dani3lphp/design-tokens-manager-for-elementor/issues)
+- **Support Forum**: [WordPress.org Support](https://wordpress.org/support/plugin/design-tokens-manager-for-elementor/)
 
 ---
 
-## 📝 Changelog
+## 🎉 Thank You!
 
-### 1.5.1 - 2024
-- Fixed undefined variable bug in admin interface
-- Enhanced XSS security in font family sanitization
-- Added 2MB file upload limit for security
-- Improved internationalization with translators comments
-- Created languages directory for translations
-- Enhanced input sanitization with wp_unslash()
-- Optimized performance (added phpcs:ignore for acceptable slow query)
-- Better error messages with specific codes
-- WordPress.org Plugin Check compliance verified
+Thank you for using Design Tokens Manager for Elementor! We hope it makes your design workflow faster and more efficient.
 
-### 1.5.0 - 2024
-- Initial public release
-- Bulk color and font management
-- Full clamp() support for fluid typography
-- Import/Export functionality
-- WP-CLI integration
-- Two-way sync with Elementor Site Settings
+**Happy designing!** 🎨
 
 ---
 
-**Made with ❤️ by [Daniel Gabriel Lupu](https://github.com/dani3lphp)**
-
-*If you find this plugin helpful, please consider [leaving a review](https://wordpress.org/support/plugin/design-tokens-manager-for-elementor/reviews/) on WordPress.org!*
+*Made with ❤️ for the Elementor community*
